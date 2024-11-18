@@ -9,13 +9,15 @@ import {
   cleanModulePath,
   findClosestPackageRoot,
   findPackages,
-  getJsconfigPaths,
+  getJsconfigAlias,
   normalizeAlias,
   normalizePackageGlobOptions,
   normalizeTsconfigOptions,
 } from "./utils";
 
 const processCwd = cwd();
+
+const pathToPackagesMap = new Map<string, string[]>();
 
 export default function resolve(
   modulePath: string,
@@ -42,36 +44,60 @@ export default function resolve(
     ...config,
   };
 
-  const resolveRoots = !roots || roots.length === 0 ? [processCwd] : roots;
+  let resolveRoots = !roots || roots.length === 0 ? [processCwd] : roots;
   let resolveAlias = normalizeAlias(alias);
 
-  let packageRoot: string = processCwd;
+  let sourceFilePackage: string | undefined;
 
   if (typeof packages === "object") {
     for (const r of resolveRoots) {
-      const globOptions = normalizePackageGlobOptions(packages, r);
+      // find all packages in the root
+      let paths = pathToPackagesMap.get(r);
+      if (!paths) {
+        const globOptions = normalizePackageGlobOptions(packages, r);
+        paths = findPackages(r, globOptions);
 
-      const paths = findPackages(r, globOptions);
-      if (paths.length === 0) {
-        continue;
+        pathToPackagesMap.set(r, paths);
       }
+
+      if (!paths.length) continue;
 
       const filePackage = findClosestPackageRoot(sourceFile, paths);
       if (filePackage) {
-        packageRoot = filePackage;
+        sourceFilePackage = filePackage;
+
+        resolveRoots = Array.from(
+          new Set([sourceFilePackage, ...resolveRoots]),
+        );
+
         break;
       }
     }
+  } else {
+    const findPackage = findClosestPackageRoot(sourceFile, resolveRoots);
+
+    if (findPackage) {
+      sourceFilePackage = findPackage;
+    }
+  }
+
+  // file not find in any package
+  if (!sourceFilePackage) {
+    return { found: false };
   }
 
   const tsconfigOptions = normalizeTsconfigOptions(
-    packageRoot,
+    sourceFilePackage,
     sourceFile,
     tsconfig,
   );
 
   if (!tsconfigOptions) {
-    const jsconfigPaths = getJsconfigPaths(packageRoot, sourceFile, jsconfig);
+    const jsconfigPaths = getJsconfigAlias(
+      sourceFilePackage,
+      sourceFile,
+      jsconfig,
+    );
 
     if (jsconfigPaths) {
       resolveAlias = { ...jsconfigPaths, ...resolveAlias };

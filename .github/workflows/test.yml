@@ -7,18 +7,14 @@ on:
 jobs:
   test:
     name: "Test Resolve"
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        node-version: [10, 22]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm install
-      - run: npm run test
+          node-version: '18'
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm run test

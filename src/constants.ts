@@ -3,9 +3,9 @@ import type { NapiResolveOptions } from "oxc-resolver";
 import type { Options, PackageGlobOptions } from "./types";
 
 export const defaultPackagesOptions = {
+  patterns: ["."],
   ignore: ["**/node_modules/**", "**/test/**", "**/tests/**"],
   includeRoot: false,
-  patterns: ["."],
 } satisfies PackageGlobOptions;
 
 /**
@@ -58,8 +58,11 @@ export const defaultOptions = {
     "browser",
   ],
 
-  tsconfig: false,
-  jsconfig: "auto",
+  tsconfig: true,
+  jsconfig: true,
+
+  preferRelative: true,
+  preferAbsolute: false,
 } satisfies Options;
 
 export const defaultTsconfigOptions = {

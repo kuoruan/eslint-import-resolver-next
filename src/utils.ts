@@ -1,6 +1,6 @@
 import fastGlob from "fast-glob";
 import fs from "fs";
-import { getTsconfig, type TsConfigResult } from "get-tsconfig";
+import { getTsconfig, parseTsconfig } from "get-tsconfig";
 import yaml from "js-yaml";
 import type { NapiResolveOptions } from "oxc-resolver";
 import path from "path";
@@ -96,9 +96,12 @@ export function findPackages(
  * @returns
  */
 export function sortPaths(paths: string[]): string[] {
-  return paths.sort(
-    (a, b) => b.split(path.sep).length - a.split(path.sep).length,
-  );
+  return paths.sort((a, b) => {
+    if (a === "/") return -1;
+    if (b === "/") return 1;
+
+    return b.split(path.sep).length - a.split(path.sep).length;
+  });
 }
 
 export function readYamlFile<T>(filePath: string): T {
@@ -106,9 +109,13 @@ export function readYamlFile<T>(filePath: string): T {
 }
 
 export function normalizePackageGlobOptions(
-  { pnpmWorkspace, patterns, ...restOptions }: PackageOptions,
+  opts: PackageOptions | string[],
   root: string,
 ): PackageGlobOptions {
+  const { pnpmWorkspace, patterns, ...restOptions } = Array.isArray(opts)
+    ? ({ patterns: opts } satisfies PackageOptions)
+    : opts;
+
   let packagePatterns: string[] | undefined;
 
   if (pnpmWorkspace) {
@@ -180,11 +187,11 @@ export function normalizeTsconfigOptions(
   sourceFile: string,
   tsconfig?: boolean | string | NapiResolveOptions["tsconfig"],
 ): NapiResolveOptions["tsconfig"] | undefined {
+  if (!tsconfig) return undefined;
+
   if (typeof tsconfig === "object") {
     return { ...defaultTsconfigOptions, ...tsconfig };
   }
-
-  if (!tsconfig) return undefined;
 
   let tsconfigFilename: string | undefined;
 
@@ -212,7 +219,35 @@ export function normalizeTsconfigOptions(
     : undefined;
 }
 
-export function getJsconfigPaths(
+export function pathsToAlias(
+  paths?: Record<string, string[]>,
+  baseUrl?: string,
+): Record<string, string[]> | undefined {
+  if (!paths) return undefined;
+
+  return Object.keys(paths).reduce(
+    (acc, key) => {
+      const normalizedKey = key.replace(/\/\*$/, "");
+
+      const normalizedValues = paths[key]
+        ?.map((value) => {
+          const cleanPath = value.replace(/\/\*$/, "");
+
+          return path.join(baseUrl ?? "", cleanPath);
+        })
+        .filter(Boolean);
+
+      if (normalizedValues && normalizeAlias.length > 0) {
+        acc[normalizedKey] = normalizedValues;
+      }
+
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+}
+
+export function getJsconfigAlias(
   root: string,
   sourceFile: string,
   jsconfig: boolean | string,
@@ -224,22 +259,33 @@ export function getJsconfigPaths(
     typeof jsconfig === "string" ? jsconfig : JSCONFIG_FILENAME,
   );
 
-  let jsconfigRes: TsConfigResult | null;
+  let paths: Record<string, string[]> | undefined;
+  let baseUrl: string | undefined;
+
   if (fs.existsSync(jsconfigPath)) {
-    jsconfigRes = getTsconfig(jsconfigPath);
-  } else {
-    jsconfigRes = getTsconfig(
-      path.dirname(sourceFile),
-      path.basename(jsconfigPath),
-      configCache,
+    const jsconfigRes = parseTsconfig(jsconfigPath, configCache);
+
+    paths = jsconfigRes.compilerOptions?.paths;
+    baseUrl = jsconfigRes.compilerOptions?.baseUrl;
+
+    return pathsToAlias(paths, baseUrl);
+  }
+
+  const jsconfigRes = getTsconfig(
+    path.dirname(sourceFile),
+    path.basename(jsconfigPath),
+    configCache,
+  );
+
+  if (jsconfigRes?.path) {
+    paths = jsconfigRes.config?.compilerOptions?.paths;
+    baseUrl = path.join(
+      path.dirname(jsconfigRes.path),
+      jsconfigRes.config?.compilerOptions?.baseUrl ?? "",
     );
   }
 
-  if (jsconfigRes?.config?.compilerOptions?.paths) {
-    return jsconfigRes.config.compilerOptions.paths;
-  }
-
-  return undefined;
+  return pathsToAlias(paths, baseUrl);
 }
 
 export function normalizeAlias(

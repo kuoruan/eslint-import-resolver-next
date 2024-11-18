@@ -1,6 +1,12 @@
 # eslint-import-resolver-next
 
-This package adds [`package.json#exports`](https://nodejs.org/api/packages.html#exports) support to [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) using the [resolve.exports](https://github.com/lukeed/resolve.exports) package.
+The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) or [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) that resolves modules with `oxc-resolver`.
+
+## Features
+
+- Resolves modules using the `oxc-resolver` package.
+- Support mono-repos and `pnpm-workspaces.yaml`.
+- Support paths alias defined in `tsconfig.compilerOptions.paths` or `jsconfig.compilerOptions.paths`.
 
 ## Usage
 
@@ -10,7 +16,7 @@ This package adds [`package.json#exports`](https://nodejs.org/api/packages.html#
 npm install -D eslint-import-resolver-next
 ```
 
-2. Add it as a resolver to your ESLint configuration. You should always include another resolver (e.g. `eslint-import-resolver-node` or `eslint-import-resolver-typescript`) since this resolver only supports `package.json#exports` and not the other Node.js resolution features.
+2. Add it as a resolver to your ESLint configuration.
 
 Example config:
 
@@ -19,31 +25,41 @@ module.exports = {
   // ... other configuration options
   settings: {
     "import/resolver": {
-      typescript: {
-        project: [__dirname + "/tsconfig.json"],
-      },
-      exports: {
-        // Accepts the same options as the `resolve.exports` package
-        // See: https://github.com/lukeed/resolve.exports#optionsunsafe
-
-        // All optional, default values are shown
-
-        // Add "require" field to the conditions
-        require: false,
-        // Add "browser" field to the conditions
-        browser: false,
-        // List of additional/custom conditions
-        conditions: [],
-        // Ignore everything except the `conditions` option
-        unsafe: false,
+      next: {
+        // Options for the resolver
       },
     },
   },
 };
 ```
 
-## Credits and license
+## Options
 
-This package is based on the [`eslint-import-resolver-exports`](https://github.com/cyco130/eslint-import-resolver-exports) package by Fatih Aygün. It is licensed under the MIT license.
+- `roots` (Array<string>): The directories to search for modules. Default: `["."]`.
 
-This package is maintained by [Xingwang Liao](https://github.com/kuoruan).
+- `alias` (Record<string, string | string[]>): The paths alias. Default: `undefined`.
+
+- `tsconfig` (boolean | string | object): Weather to use the `tsconfig.json` file. Default: `true`.
+  * If `true`, the resolver will try to find the `tsconfig.json` file in the package directory.
+  * If a string, the resolver will try to find the file in the specified path.
+  * If an object, see the `tsconfig` option in the `oxc-resolver` package.
+
+- `jsconfig` (boolean | string | object): Weather to use the `jsconfig.json` file. Default: `true`.
+  * If `true`, the resolver will try to find the `jsconfig.json` file in the package directory.
+  * If a string, the resolver will try to find the file in the specified path.
+  * If an object, see the `jsconfig` option in the `oxc-resolver` package.
+
+- `packages` (string[] | PackageOptions): The directories to search for packages. Default: `undefined`.
+  * If an array, the resolver will search for packages in the specified directories.
+  * If an object, see the `PackageOptions`.
+
+All other options are passed to the `oxc-resolver` package. See the [oxc-resolver documentation](https://github.com/oxc-project/oxc-resolver#options)
+
+### PackageOptions
+
+- `patterns` (string[]): The patterns to search for packages. Default: `["."]`.
+- `ignore` (string[]): The directories to ignore. Default: `["**/node_modules/**", "**/test/**", "**/tests/**"]`.
+- `includeRoot` (boolean): Weather to include the root directory. Default: `false`.
+- `pnpmWorkspace` (boolean | string): Weather to use the `pnpm-workspace.yaml` file to find packages. Default: `true`.
+  * If `true`, the resolver will try to find the `pnpm-workspace.yaml` file in the package directory.
+  * If a string, define the path to the `pnpm-workspace.yaml` file.
