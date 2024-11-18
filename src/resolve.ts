@@ -24,7 +24,7 @@ export default function resolve(
   sourceFile: string,
   config?: Options | null,
 ): ResolvedResult {
-  if (modulePath.startsWith(".") || modulePath.startsWith("/")) {
+  if (modulePath.startsWith(".")) {
     return { found: false };
   }
 
@@ -44,7 +44,7 @@ export default function resolve(
     ...config,
   };
 
-  let resolveRoots = !roots || roots.length === 0 ? [processCwd] : roots;
+  let resolveRoots = roots?.length ? roots : [processCwd];
   let resolveAlias = normalizeAlias(alias);
 
   let sourceFilePackage: string | undefined;
@@ -111,11 +111,13 @@ export default function resolve(
     ...restOptions,
   });
 
-  const result = resolver.sync(path.dirname(sourceFile), modulePath);
+  for (const dir of [path.dirname(sourceFile), sourceFilePackage]) {
+    const result = resolver.sync(dir, modulePath);
 
-  if (!result.path) {
-    return { found: false };
+    if (result.path) {
+      return { found: true, path: result.path };
+    }
   }
 
-  return { found: true, path: result.path };
+  return { found: false };
 }
