@@ -111,9 +111,15 @@ export default function resolve(
     ...restOptions,
   });
 
-  for (const dir of [path.dirname(sourceFile), sourceFilePackage]) {
-    const result = resolver.sync(dir, modulePath);
+  const sourceDir = path.dirname(sourceFile);
 
+  let result = resolver.sync(sourceDir, modulePath);
+  if (result.path) {
+    return { found: true, path: result.path };
+  }
+
+  if (sourceFilePackage !== sourceDir) {
+    result = resolver.sync(sourceFilePackage, modulePath);
     if (result.path) {
       return { found: true, path: result.path };
     }
