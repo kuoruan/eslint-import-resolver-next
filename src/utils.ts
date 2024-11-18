@@ -75,9 +75,15 @@ export function findPackages(
     ...opts,
   };
 
-  const normalizedPatterns = normalizePatterns(patterns);
+  const normalizedPatterns = normalizePatterns(
+    patterns ?? defaultPackagesOptions.patterns,
+  );
   if (includeRoot) {
     normalizedPatterns.push(...normalizePatterns(["."]));
+  }
+
+  if (!normalizedPatterns.length) {
+    return [];
   }
 
   const paths = fastGlob.sync(normalizedPatterns, { cwd: root, ignore });
@@ -104,8 +110,17 @@ export function sortPaths(paths: string[]): string[] {
   });
 }
 
-export function readYamlFile<T>(filePath: string): T {
-  return yaml.load(filePath) as T;
+export function readYamlFile<T>(filePath: string): T | null {
+  let doc: T | null;
+  try {
+    doc = yaml.load(fs.readFileSync(filePath, "utf8")) as T;
+  } catch {
+    // ignore
+
+    doc = null;
+  }
+
+  return doc;
 }
 
 export function normalizePackageGlobOptions(
@@ -130,7 +145,7 @@ export function normalizePackageGlobOptions(
       const pnpmWorkspace =
         readYamlFile<Record<"packages", string[]>>(pnpmWorkspacePath);
 
-      if (pnpmWorkspace.packages && pnpmWorkspace.packages.length > 0) {
+      if (pnpmWorkspace?.packages?.length) {
         packagePatterns = pnpmWorkspace.packages;
       }
     }
