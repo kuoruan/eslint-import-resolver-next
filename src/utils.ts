@@ -178,29 +178,6 @@ export function findClosestPackageRoot(
 
 const configCache = new Map();
 
-export function getConfigFilename(
-  root: string,
-  sourceFile: string,
-  filename: string,
-): string | null {
-  const configPath = path.join(root, filename);
-
-  if (fs.existsSync(configPath)) {
-    return configPath;
-  }
-
-  const configRes = getTsconfig(
-    sourceFile,
-    path.basename(filename),
-    configCache,
-  );
-  if (configRes?.path) {
-    return configRes.path;
-  }
-
-  return null;
-}
-
 export function normalizeTsconfigOptions(
   root: string,
   sourceFile: string,
