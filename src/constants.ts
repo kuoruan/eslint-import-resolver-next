@@ -60,9 +60,6 @@ export const defaultOptions = {
 
   tsconfig: true,
   jsconfig: true,
-
-  preferRelative: true,
-  preferAbsolute: false,
 } satisfies Options;
 
 export const defaultTsconfigOptions = {

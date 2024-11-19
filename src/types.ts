@@ -59,11 +59,6 @@ export interface Options
   packages?: string[] | PackageOptions;
 }
 
-export interface JsconfigResult {
-  configFile?: string;
-  alias?: Record<string, string[]>;
-}
-
 export interface ResultNotFound {
   found: false;
   path?: undefined;

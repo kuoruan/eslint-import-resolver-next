@@ -9,7 +9,7 @@ import {
   cleanModulePath,
   findClosestPackageRoot,
   findPackages,
-  getJsconfig,
+  getJsconfigAlias,
   normalizeAlias,
   normalizePackageGlobOptions,
   normalizeTsconfigOptions,
@@ -45,7 +45,6 @@ export default function resolve(
   };
 
   let resolveRoots = roots?.length ? roots : [processCwd];
-  let resolveAlias = normalizeAlias(alias);
 
   let sourceFilePackage: string | undefined;
 
@@ -86,23 +85,24 @@ export default function resolve(
     return { found: false };
   }
 
+  let resolveAlias = normalizeAlias(alias, sourceFilePackage);
+
   const tsconfigOptions = normalizeTsconfigOptions(
     sourceFilePackage,
     sourceFile,
     tsconfig,
   );
 
-  let configFilePath: string | undefined;
   if (!tsconfigOptions) {
-    const jsconfigPaths = getJsconfig(sourceFilePackage, sourceFile, jsconfig);
+    const jsconfigAlias = getJsconfigAlias(
+      sourceFilePackage,
+      sourceFile,
+      jsconfig,
+    );
 
-    if (jsconfigPaths) {
-      resolveAlias = { ...jsconfigPaths.alias, ...resolveAlias };
-
-      configFilePath = jsconfigPaths.configFile;
+    if (jsconfigAlias) {
+      resolveAlias = { ...jsconfigAlias, ...resolveAlias };
     }
-  } else {
-    configFilePath = tsconfigOptions.configFile;
   }
 
   const resolver = new ResolverFactory({
@@ -113,19 +113,10 @@ export default function resolve(
   });
 
   const sourceDir = path.dirname(sourceFile);
-  const configFileDir = configFilePath
-    ? path.dirname(configFilePath)
-    : undefined;
 
-  const resolveDirs = Array.from(
-    new Set([sourceDir, configFileDir, sourceFilePackage].filter(Boolean)),
-  ) as string[];
-
-  for (const dir of resolveDirs) {
-    const result = resolver.sync(dir, modulePath);
-    if (result.path) {
-      return { found: true, path: result.path };
-    }
+  const result = resolver.sync(sourceDir, modulePath);
+  if (result.path) {
+    return { found: true, path: result.path };
   }
 
   return { found: false };

@@ -12,11 +12,7 @@ import {
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants";
-import type {
-  JsconfigResult,
-  PackageGlobOptions,
-  PackageOptions,
-} from "./types";
+import type { PackageGlobOptions, PackageOptions } from "./types";
 
 /**
  * Remove prefix and querystrings from the module path.
@@ -217,6 +213,7 @@ export function normalizeTsconfigOptions(
 
 export function pathsToAlias(
   paths?: Record<string, string[]>,
+  parent = "/",
   baseUrl?: string,
 ): Record<string, string[]> | undefined {
   if (!paths) return undefined;
@@ -229,11 +226,11 @@ export function pathsToAlias(
         ?.map((value) => {
           const cleanPath = value.replace(/\/\*$/, "");
 
-          return path.join(baseUrl ?? "", cleanPath);
+          return path.join(parent, baseUrl ?? "", cleanPath);
         })
         .filter(Boolean);
 
-      if (normalizeAlias?.length > 0) {
+      if (normalizedValues?.length > 0) {
         acc[normalizedKey] = normalizedValues;
       }
 
@@ -243,11 +240,11 @@ export function pathsToAlias(
   );
 }
 
-export function getJsconfig(
+export function getJsconfigAlias(
   root: string,
   sourceFile: string,
   jsconfig: boolean | string,
-): JsconfigResult | undefined {
+): Record<string, string[]> | undefined {
   if (!jsconfig) return undefined;
 
   const jsconfigPath = path.join(
@@ -260,10 +257,11 @@ export function getJsconfig(
 
     const alias = pathsToAlias(
       jsconfigRes.compilerOptions?.paths,
+      path.dirname(jsconfigPath),
       jsconfigRes.compilerOptions?.baseUrl,
     );
 
-    return { configFile: jsconfigPath, alias: alias };
+    return alias;
   }
 
   const jsconfigRes = getTsconfig(
@@ -275,10 +273,11 @@ export function getJsconfig(
   if (jsconfigRes?.path) {
     const alias = pathsToAlias(
       jsconfigRes.config?.compilerOptions?.paths,
+      path.dirname(jsconfigRes.path),
       jsconfigRes.config?.compilerOptions?.baseUrl,
     );
 
-    return { configFile: jsconfigRes.path, alias: alias };
+    return alias;
   }
 
   return undefined;
@@ -286,14 +285,15 @@ export function getJsconfig(
 
 export function normalizeAlias(
   alias?: Record<string, string | string[]>,
+  parent = "/",
 ): Record<string, string[]> | undefined {
   if (!alias) return undefined;
 
   return Object.keys(alias).reduce(
     (acc, key) => {
-      const value = alias[key];
+      const value = Array.isArray(alias[key]) ? alias[key] : [alias[key]];
 
-      acc[key] = Array.isArray(value) ? value : [value];
+      acc[key] = value.map((item) => path.resolve(parent, item));
       return acc;
     },
     {} as Record<string, string[]>,

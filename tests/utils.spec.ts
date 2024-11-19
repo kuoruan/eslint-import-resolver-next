@@ -23,24 +23,30 @@ describe("test normalize patterns", () => {
 
 describe("test jsconfig paths to alias", () => {
   it("jsconfig paths to alias", () => {
-    const result1 = pathsToAlias({
-      "@/*": ["/path/to/*"],
-    });
-    const result2 = pathsToAlias({
-      "@/*": ["/path/to/*", "/path/to2/*"],
-    });
+    const result1 = pathsToAlias(
+      {
+        "@/*": ["/path/to/*"],
+      },
+      "/a",
+    );
+    const result2 = pathsToAlias(
+      {
+        "@/*": ["/path/to/*", "/path/to2/*"],
+      },
+      "/",
+    );
     const result3 = pathsToAlias({
       "@aaa/*": ["./path/to/*"],
     });
 
     expect(result1).toEqual({
-      "@": ["/path/to"],
+      "@": ["/a/path/to"],
     });
     expect(result2).toEqual({
       "@": ["/path/to", "/path/to2"],
     });
     expect(result3).toEqual({
-      "@aaa": ["path/to"],
+      "@aaa": ["/path/to"],
     });
   });
 
@@ -57,12 +63,9 @@ describe("test jsconfig paths to alias", () => {
       },
       "/path",
     );
-    const result3 = pathsToAlias(
-      {
-        "@aaa/*": ["./path/to/*"],
-      },
-      "./",
-    );
+    const result3 = pathsToAlias({
+      "@aaa/*": ["./path/to/*"],
+    });
 
     expect(result1).toEqual({
       "@": ["/path/path/to"],
@@ -71,7 +74,7 @@ describe("test jsconfig paths to alias", () => {
       "@": ["/path/path/to", "/path/path/to2"],
     });
     expect(result3).toEqual({
-      "@aaa": ["path/to"],
+      "@aaa": ["/path/to"],
     });
   });
 });
