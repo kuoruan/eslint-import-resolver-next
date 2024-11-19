@@ -8,7 +8,7 @@ import {
   JSCONFIG_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants";
-import type { Options, ResolvedResult } from "./types";
+import type { ConfigFileOptions, Options, ResolvedResult } from "./types";
 import {
   cleanModulePath,
   findClosestPackageRoot,
@@ -103,20 +103,23 @@ export default function resolve(
 
   const resolveAlias = normalizeAlias(alias, sourceFilePackage);
 
-  let configFileOptions = normalizeConfigFileOptions(
-    sourceFilePackage,
-    sourceFile,
-    tsconfig,
-    TSCONFIG_FILENAME,
-  );
+  let configFileOptions: ConfigFileOptions | undefined;
 
-  if (!configFileOptions) {
-    configFileOptions = normalizeConfigFileOptions(
+  for (const c of [
+    { config: tsconfig, filename: TSCONFIG_FILENAME },
+    { config: jsconfig, filename: JSCONFIG_FILENAME },
+  ] as const) {
+    const opts = normalizeConfigFileOptions(
       sourceFilePackage,
       sourceFile,
-      jsconfig,
-      JSCONFIG_FILENAME,
+      c.config,
+      c.filename,
     );
+
+    if (opts) {
+      configFileOptions = opts;
+      break;
+    }
   }
 
   const resolver = new ResolverFactory({
