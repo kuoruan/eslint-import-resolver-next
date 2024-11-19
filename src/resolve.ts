@@ -105,7 +105,7 @@ export default function resolve(
 
   let configFileOptions = normalizeConfigFileOptions(
     sourceFilePackage,
-    sourceFileDir,
+    sourceFile,
     tsconfig,
     TSCONFIG_FILENAME,
   );
@@ -113,7 +113,7 @@ export default function resolve(
   if (!configFileOptions) {
     configFileOptions = normalizeConfigFileOptions(
       sourceFilePackage,
-      sourceFileDir,
+      sourceFile,
       jsconfig,
       JSCONFIG_FILENAME,
     );

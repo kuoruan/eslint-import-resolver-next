@@ -17,4 +17,33 @@ describe("Test monorepo", () => {
       path: getMonoRepoPath("main/lib/foo.js"),
     });
   });
+
+  it("tsconfig", () => {
+    expect(
+      resolve("@/a", getMonoRepoPath("packages/ts/index.ts"), {
+        roots,
+      }),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("packages/ts/src/a.ts"),
+    });
+
+    expect(
+      resolve("@src/a", getMonoRepoPath("packages/ts/tests/a.spec.ts"), {
+        roots,
+      }),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("packages/ts/src/a.ts"),
+    });
+
+    expect(
+      resolve("#/root", getMonoRepoPath("packages/ts/tests/foo/b.spec.ts"), {
+        roots,
+      }),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("packages/ts/root.ts"),
+    });
+  });
 });

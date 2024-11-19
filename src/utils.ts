@@ -179,11 +179,20 @@ export function findClosestPackageRoot(
   return sortPaths(paths).find((p) => sourceFile.startsWith(p));
 }
 
-const configCache = new Map<string, boolean>();
+export function findClosestConfigFile(
+  sourceFile: string,
+  configFiles: string[],
+): string | undefined {
+  return sortPaths(configFiles).find((p) =>
+    sourceFile.startsWith(path.dirname(p)),
+  );
+}
+
+const configCache = new Map<string, string[]>();
 
 export function normalizeConfigFileOptions(
   packageDir: string,
-  sourceFileDir: string,
+  sourceFile: string,
   config?: boolean | string | ConfigFileOptions,
   defaultFilename = TSCONFIG_FILENAME,
 ): ConfigFileOptions | undefined {
@@ -193,35 +202,32 @@ export function normalizeConfigFileOptions(
     return { ...defaultConfigFileOptions, ...config };
   }
 
-  const searchDirs: string[] = [];
+  const filename =
+    typeof config === "string" ? path.basename(config) : defaultFilename;
 
-  let dir = sourceFileDir;
-  while (dir !== packageDir && dir !== path.dirname(dir)) {
-    searchDirs.push(dir);
+  const cacheKey = `${packageDir}:${filename}`;
 
-    dir = path.dirname(sourceFileDir);
+  let configFiles: string[];
+  if (configCache.has(cacheKey)) {
+    configFiles = configCache.get(cacheKey)!;
+  } else {
+    configFiles = fastGlob.sync(`**/${filename}`, {
+      cwd: packageDir,
+      ignore: ["**/node_modules/**"],
+      absolute: true,
+    });
+
+    configCache.set(cacheKey, configFiles);
   }
 
-  searchDirs.push(packageDir);
+  if (!configFiles.length) {
+    return undefined;
+  }
 
-  const configPaths = searchDirs.map((dir: string) =>
-    path.join(dir, typeof config === "string" ? config : defaultFilename),
-  );
+  const closestConfigPath = findClosestConfigFile(sourceFile, configFiles);
 
-  for (const configPath of configPaths) {
-    if (configCache.has(configPath)) {
-      if (configCache.get(configPath)) {
-        return { ...defaultConfigFileOptions, configFile: configPath };
-      }
-    } else {
-      const exists = fs.existsSync(configPath);
-
-      configCache.set(configPath, exists);
-
-      if (exists) {
-        return { ...defaultConfigFileOptions, configFile: configPath };
-      }
-    }
+  if (closestConfigPath) {
+    return { ...defaultConfigFileOptions, configFile: closestConfigPath };
   }
 
   return undefined;

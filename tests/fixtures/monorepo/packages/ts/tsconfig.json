@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "strictNullChecks": true
+  },
+  "include": ["src/**/*", "*.ts"],
+}
