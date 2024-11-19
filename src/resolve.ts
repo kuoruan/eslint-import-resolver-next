@@ -103,18 +103,18 @@ export default function resolve(
 
   const resolveAlias = normalizeAlias(alias, sourceFilePackage);
 
-  const searchDirs = unique([sourceFileDir, sourceFilePackage]);
-
   let configFileOptions = normalizeConfigFileOptions(
+    sourceFilePackage,
+    sourceFileDir,
     tsconfig,
-    searchDirs,
     TSCONFIG_FILENAME,
   );
 
   if (!configFileOptions) {
     configFileOptions = normalizeConfigFileOptions(
+      sourceFilePackage,
+      sourceFileDir,
       jsconfig,
-      searchDirs,
       JSCONFIG_FILENAME,
     );
   }

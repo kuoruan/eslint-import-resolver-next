@@ -182,8 +182,9 @@ export function findClosestPackageRoot(
 const configCache = new Map<string, boolean>();
 
 export function normalizeConfigFileOptions(
+  packageDir: string,
+  sourceFileDir: string,
   config?: boolean | string | ConfigFileOptions,
-  searchDirs: string[] = [],
   defaultFilename = TSCONFIG_FILENAME,
 ): ConfigFileOptions | undefined {
   if (!config) return undefined;
@@ -192,30 +193,34 @@ export function normalizeConfigFileOptions(
     return { ...defaultConfigFileOptions, ...config };
   }
 
+  const searchDirs: string[] = [];
+
+  let dir = sourceFileDir;
+  while (dir !== packageDir && dir !== path.dirname(dir)) {
+    searchDirs.push(dir);
+
+    dir = path.dirname(sourceFileDir);
+  }
+
+  searchDirs.push(packageDir);
+
   const configPaths = searchDirs.map((dir: string) =>
     path.join(dir, typeof config === "string" ? config : defaultFilename),
   );
 
   for (const configPath of configPaths) {
-    let configFile: string | undefined;
-
     if (configCache.has(configPath)) {
-      const exist = configCache.get(configPath)!;
-
-      if (exist) {
-        configFile = configPath;
+      if (configCache.get(configPath)) {
+        return { ...defaultConfigFileOptions, configFile: configPath };
       }
     } else {
-      if (fs.existsSync(configPath)) {
-        configFile = configPath;
-        configCache.set(configPath, true);
-      } else {
-        configCache.set(configPath, false);
-      }
-    }
+      const exists = fs.existsSync(configPath);
 
-    if (configFile) {
-      return { ...defaultConfigFileOptions, configFile };
+      configCache.set(configPath, exists);
+
+      if (exists) {
+        return { ...defaultConfigFileOptions, configFile: configPath };
+      }
     }
   }
 
