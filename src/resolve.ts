@@ -19,7 +19,7 @@ import {
   unique,
 } from "./utils";
 
-const processCwd = cwd();
+const root = cwd();
 
 const pathToPackagesMap = new Map<string, string[]>();
 let resolverCache: ResolverFactory | null = null;
@@ -62,7 +62,7 @@ export default function resolve(
     return { found: false };
   }
 
-  let resolveRoots = roots?.length ? roots : [processCwd];
+  let resolveRoots = roots?.length ? roots : [root];
 
   let sourceFilePackage: string | undefined;
 
