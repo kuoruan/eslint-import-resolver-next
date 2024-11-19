@@ -217,7 +217,13 @@ export function normalizeAlias(
     (acc, key) => {
       const value = Array.isArray(alias[key]) ? alias[key] : [alias[key]];
 
-      acc[key] = value.map((item) => path.resolve(parent, item));
+      acc[key] = value.map((item) => {
+        if (path.isAbsolute(item)) {
+          return item;
+        }
+
+        return path.resolve(parent, item);
+      });
       return acc;
     },
     {} as Record<string, string[]>,

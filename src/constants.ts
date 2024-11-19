@@ -1,10 +1,10 @@
-import type { ConfigFileOptions, Options, PackageGlobOptions } from "./types";
+import type { ConfigFileOptions, Options, PackageOptions } from "./types";
 
 export const defaultPackagesOptions = {
   patterns: ["."],
   ignore: ["**/node_modules/**", "**/test/**", "**/tests/**"],
   includeRoot: false,
-} satisfies PackageGlobOptions;
+} satisfies PackageOptions;
 
 /**
  * Copy from https://github.com/9romise/eslint-import-resolver-oxc/blob/main/src/normalizeOptions.ts
