@@ -233,7 +233,7 @@ export function pathsToAlias(
         })
         .filter(Boolean);
 
-      if (normalizedValues && normalizeAlias.length > 0) {
+      if (normalizeAlias?.length > 0) {
         acc[normalizedKey] = normalizedValues;
       }
 
@@ -293,9 +293,7 @@ export function normalizeAlias(
     (acc, key) => {
       const value = alias[key];
 
-      if (!Array.isArray(value)) {
-        acc[key] = [value];
-      }
+      acc[key] = Array.isArray(value) ? value : [value];
       return acc;
     },
     {} as Record<string, string[]>,
