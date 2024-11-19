@@ -179,7 +179,7 @@ export function findClosestPackageRoot(
   return sortPaths(paths).find((p) => sourceFile.startsWith(p));
 }
 
-const configCache = new Set();
+const configCache = new Map<string, boolean>();
 
 export function normalizeConfigFileOptions(
   config?: boolean | string | ConfigFileOptions,
@@ -197,10 +197,25 @@ export function normalizeConfigFileOptions(
   );
 
   for (const configPath of configPaths) {
-    if (configCache.has(configPath) || fs.existsSync(configPath)) {
-      configCache.add(configPath);
+    let configFile: string | undefined;
 
-      return { ...defaultConfigFileOptions, configFile: configPath };
+    if (configCache.has(configPath)) {
+      const exist = configCache.get(configPath)!;
+
+      if (exist) {
+        configFile = configPath;
+      }
+    } else {
+      if (fs.existsSync(configPath)) {
+        configFile = configPath;
+        configCache.set(configPath, true);
+      } else {
+        configCache.set(configPath, false);
+      }
+    }
+
+    if (configFile) {
+      return { ...defaultConfigFileOptions, configFile };
     }
   }
 
