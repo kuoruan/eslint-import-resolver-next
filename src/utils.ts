@@ -12,7 +12,11 @@ import {
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants";
-import type { PackageGlobOptions, PackageOptions } from "./types";
+import type {
+  JsconfigResult,
+  PackageGlobOptions,
+  PackageOptions,
+} from "./types";
 
 /**
  * Remove prefix and querystrings from the module path.
@@ -262,11 +266,11 @@ export function pathsToAlias(
   );
 }
 
-export function getJsconfigAlias(
+export function getJsconfig(
   root: string,
   sourceFile: string,
   jsconfig: boolean | string,
-): Record<string, string[]> | undefined {
+): JsconfigResult | undefined {
   if (!jsconfig) return undefined;
 
   const jsconfigPath = path.join(
@@ -274,16 +278,15 @@ export function getJsconfigAlias(
     typeof jsconfig === "string" ? jsconfig : JSCONFIG_FILENAME,
   );
 
-  let paths: Record<string, string[]> | undefined;
-  let baseUrl: string | undefined;
-
   if (fs.existsSync(jsconfigPath)) {
     const jsconfigRes = parseTsconfig(jsconfigPath, configCache);
 
-    paths = jsconfigRes.compilerOptions?.paths;
-    baseUrl = jsconfigRes.compilerOptions?.baseUrl;
+    const alias = pathsToAlias(
+      jsconfigRes.compilerOptions?.paths,
+      jsconfigRes.compilerOptions?.baseUrl,
+    );
 
-    return pathsToAlias(paths, baseUrl);
+    return { configFile: jsconfigPath, alias: alias };
   }
 
   const jsconfigRes = getTsconfig(
@@ -293,14 +296,15 @@ export function getJsconfigAlias(
   );
 
   if (jsconfigRes?.path) {
-    paths = jsconfigRes.config?.compilerOptions?.paths;
-    baseUrl = path.join(
-      path.dirname(jsconfigRes.path),
-      jsconfigRes.config?.compilerOptions?.baseUrl ?? "",
+    const alias = pathsToAlias(
+      jsconfigRes.config?.compilerOptions?.paths,
+      jsconfigRes.config?.compilerOptions?.baseUrl,
     );
+
+    return { configFile: jsconfigRes.path, alias: alias };
   }
 
-  return pathsToAlias(paths, baseUrl);
+  return undefined;
 }
 
 export function normalizeAlias(

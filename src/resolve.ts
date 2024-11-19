@@ -9,7 +9,7 @@ import {
   cleanModulePath,
   findClosestPackageRoot,
   findPackages,
-  getJsconfigAlias,
+  getJsconfig,
   normalizeAlias,
   normalizePackageGlobOptions,
   normalizeTsconfigOptions,
@@ -92,16 +92,17 @@ export default function resolve(
     tsconfig,
   );
 
+  let configFilePath: string | undefined;
   if (!tsconfigOptions) {
-    const jsconfigPaths = getJsconfigAlias(
-      sourceFilePackage,
-      sourceFile,
-      jsconfig,
-    );
+    const jsconfigPaths = getJsconfig(sourceFilePackage, sourceFile, jsconfig);
 
     if (jsconfigPaths) {
-      resolveAlias = { ...jsconfigPaths, ...resolveAlias };
+      resolveAlias = { ...jsconfigPaths.alias, ...resolveAlias };
+
+      configFilePath = jsconfigPaths.configFile;
     }
+  } else {
+    configFilePath = tsconfigOptions.configFile;
   }
 
   const resolver = new ResolverFactory({
@@ -112,14 +113,16 @@ export default function resolve(
   });
 
   const sourceDir = path.dirname(sourceFile);
+  const configFileDir = configFilePath
+    ? path.dirname(configFilePath)
+    : undefined;
 
-  let result = resolver.sync(sourceDir, modulePath);
-  if (result.path) {
-    return { found: true, path: result.path };
-  }
+  const resolveDirs = Array.from(
+    new Set([sourceDir, configFileDir, sourceFilePackage].filter(Boolean)),
+  ) as string[];
 
-  if (sourceFilePackage !== sourceDir) {
-    result = resolver.sync(sourceFilePackage, modulePath);
+  for (const dir of resolveDirs) {
+    const result = resolver.sync(dir, modulePath);
     if (result.path) {
       return { found: true, path: result.path };
     }
