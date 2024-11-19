@@ -11,6 +11,7 @@
     "types": "./lib/index.d.ts"
   },
   "description": "The next resolver for `eslint-plugin-import` or `eslint-plugin-import-x`",
+  "keywords": ["eslint", "eslint-plugin-import", "eslint-plugin-import-x", "eslint-import-resolver", "oxc-resolver"],
   "repository": "https://github.com/kuoruan/eslint-import-resolver-next",
   "license": "MIT",
   "files": [
