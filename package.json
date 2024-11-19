@@ -1,6 +1,6 @@
 {
   "name": "eslint-import-resolver-next",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "type": "module",
   "main": "./lib/index.cjs",
   "module": "./lib/index.js",
