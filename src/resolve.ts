@@ -1,5 +1,5 @@
 import { builtinModules } from "module";
-import { ResolverFactory } from "oxc-resolver";
+import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
 import path from "path";
 import { cwd } from "process";
 
@@ -21,8 +21,37 @@ import {
 
 const root = cwd();
 
-const pathToPackagesMap = new Map<string, string[]>();
 let resolverCache: ResolverFactory | null = null;
+
+/**
+ * Resolves relative path imports
+ *
+ * @param sourceFile - The file that imports the module
+ * @param modulePath - The module path to resolve
+ * @param options - The resolver options
+ * @returns
+ */
+function resolveRelativePath(
+  sourceFile: string,
+  modulePath: string,
+  options: NapiResolveOptions,
+): ResolvedResult {
+  if (!resolverCache) {
+    resolverCache = new ResolverFactory(options);
+  }
+
+  const sourceFileDir = path.dirname(sourceFile);
+
+  const result = resolverCache.sync(sourceFileDir, modulePath);
+
+  if (result.path) {
+    return { found: true, path: result.path };
+  }
+
+  return { found: false };
+}
+
+const pathToPackagesMap = new Map<string, string[]>();
 
 export default function resolve(
   modulePath: string,
@@ -45,34 +74,21 @@ export default function resolve(
     ...config,
   };
 
-  const sourceFileDir = path.dirname(sourceFile);
-
   // relative path
   if (modulePath.startsWith(".")) {
-    if (!resolverCache) {
-      resolverCache = new ResolverFactory(restOptions);
-    }
-
-    const result = resolverCache.sync(sourceFileDir, modulePath);
-
-    if (result.path) {
-      return { found: true, path: result.path };
-    }
-
-    return { found: false };
+    return resolveRelativePath(sourceFile, modulePath, restOptions);
   }
 
   let resolveRoots = roots?.length ? roots : [root];
 
-  let sourceFilePackage: string | undefined;
+  let packageDir: string | undefined;
 
-  if (typeof packages === "object") {
+  if (packages && typeof packages === "object") {
     for (const r of resolveRoots) {
       // find all packages in the root
       let paths = pathToPackagesMap.get(r);
       if (!paths) {
-        const globOptions = normalizePackageGlobOptions(packages, r);
-        paths = findPackages(r, globOptions);
+        paths = findPackages(r, normalizePackageGlobOptions(packages, r));
 
         pathToPackagesMap.set(r, paths);
       }
@@ -81,9 +97,9 @@ export default function resolve(
 
       const filePackage = findClosestPackageRoot(sourceFile, paths);
       if (filePackage) {
-        sourceFilePackage = filePackage;
+        packageDir = filePackage;
 
-        resolveRoots = unique([sourceFilePackage, ...resolveRoots]);
+        resolveRoots = unique([packageDir, ...resolveRoots]);
 
         break;
       }
@@ -92,16 +108,16 @@ export default function resolve(
     const findPackage = findClosestPackageRoot(sourceFile, resolveRoots);
 
     if (findPackage) {
-      sourceFilePackage = findPackage;
+      packageDir = findPackage;
     }
   }
 
   // file not find in any package
-  if (!sourceFilePackage) {
+  if (!packageDir) {
     return { found: false };
   }
 
-  const resolveAlias = normalizeAlias(alias, sourceFilePackage);
+  const resolveAlias = normalizeAlias(alias, packageDir);
 
   let configFileOptions: ConfigFileOptions | undefined;
 
@@ -109,15 +125,14 @@ export default function resolve(
     { config: tsconfig, filename: TSCONFIG_FILENAME },
     { config: jsconfig, filename: JSCONFIG_FILENAME },
   ] as const) {
-    const opts = normalizeConfigFileOptions(
-      sourceFilePackage,
+    configFileOptions = normalizeConfigFileOptions(
+      packageDir,
       sourceFile,
       c.config,
       c.filename,
     );
 
-    if (opts) {
-      configFileOptions = opts;
+    if (configFileOptions) {
       break;
     }
   }
@@ -129,7 +144,7 @@ export default function resolve(
     ...restOptions,
   });
 
-  const result = resolver.sync(sourceFileDir, modulePath);
+  const result = resolver.sync(path.dirname(sourceFile), modulePath);
   if (result.path) {
     return { found: true, path: result.path };
   }

@@ -111,11 +111,31 @@ export function findPackages(
  * @returns
  */
 export function sortPaths(paths: string[]): string[] {
+  const pathDepths = new Map<string, number>();
+
+  const getPathDepth = (p: string): number => {
+    if (pathDepths.has(p)) {
+      return pathDepths.get(p)!;
+    }
+
+    const depth = p === "/" ? 0 : p.split(path.sep).filter(Boolean).length;
+    pathDepths.set(p, depth);
+
+    return depth;
+  };
+
   return paths.sort((a, b) => {
     if (a === "/") return -1;
     if (b === "/") return 1;
 
-    return b.split(path.sep).length - a.split(path.sep).length;
+    const aDepth = getPathDepth(a);
+    const bDepth = getPathDepth(b);
+
+    if (aDepth !== bDepth) {
+      return bDepth - aDepth;
+    }
+
+    return a.localeCompare(b);
   });
 }
 
