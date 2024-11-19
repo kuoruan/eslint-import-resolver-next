@@ -1,4 +1,4 @@
-import { normalizePatterns, pathsToAlias } from "@/utils";
+import { normalizePatterns } from "@/utils";
 
 describe("test normalize patterns", () => {
   it("normalize patterns", () => {
@@ -18,63 +18,5 @@ describe("test normalize patterns", () => {
       "/path/to/package.json5",
       "/path/to/package.yaml",
     ]);
-  });
-});
-
-describe("test jsconfig paths to alias", () => {
-  it("jsconfig paths to alias", () => {
-    const result1 = pathsToAlias(
-      {
-        "@/*": ["/path/to/*"],
-      },
-      "/a",
-    );
-    const result2 = pathsToAlias(
-      {
-        "@/*": ["/path/to/*", "/path/to2/*"],
-      },
-      "/",
-    );
-    const result3 = pathsToAlias({
-      "@aaa/*": ["./path/to/*"],
-    });
-
-    expect(result1).toEqual({
-      "@": ["/a/path/to"],
-    });
-    expect(result2).toEqual({
-      "@": ["/path/to", "/path/to2"],
-    });
-    expect(result3).toEqual({
-      "@aaa": ["/path/to"],
-    });
-  });
-
-  it("jsconfig paths with baseUrl", () => {
-    const result1 = pathsToAlias(
-      {
-        "@/*": ["/path/to/*"],
-      },
-      "/path",
-    );
-    const result2 = pathsToAlias(
-      {
-        "@/*": ["/path/to/*", "/path/to2/*"],
-      },
-      "/path",
-    );
-    const result3 = pathsToAlias({
-      "@aaa/*": ["./path/to/*"],
-    });
-
-    expect(result1).toEqual({
-      "@": ["/path/path/to"],
-    });
-    expect(result2).toEqual({
-      "@": ["/path/path/to", "/path/path/to2"],
-    });
-    expect(result3).toEqual({
-      "@aaa": ["/path/to"],
-    });
   });
 });

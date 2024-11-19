@@ -1,18 +1,29 @@
 import fastGlob from "fast-glob";
 import fs from "fs";
-import { getTsconfig, parseTsconfig } from "get-tsconfig";
 import yaml from "js-yaml";
-import type { NapiResolveOptions } from "oxc-resolver";
 import path from "path";
 
 import {
+  defaultConfigFileOptions,
   defaultPackagesOptions,
-  defaultTsconfigOptions,
-  JSCONFIG_FILENAME,
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants";
-import type { PackageGlobOptions, PackageOptions } from "./types";
+import type {
+  ConfigFileOptions,
+  PackageGlobOptions,
+  PackageOptions,
+} from "./types";
+
+/**
+ * Remove duplicates from an array.
+ *
+ * @param arr - the array to remove duplicates from
+ * @returns
+ */
+export function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
+}
 
 /**
  * Remove prefix and querystrings from the module path.
@@ -88,10 +99,8 @@ export function findPackages(
 
   const paths = fastGlob.sync(normalizedPatterns, { cwd: root, ignore });
 
-  return Array.from(
-    new Set(
-      paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
-    ),
+  return unique(
+    paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
   );
 }
 
@@ -158,9 +167,7 @@ export function normalizePackageGlobOptions(
   }
 
   return {
-    patterns: packagePatterns
-      ? Array.from(new Set(packagePatterns))
-      : undefined,
+    patterns: packagePatterns ? unique(packagePatterns) : undefined,
     ...restOptions,
   };
 }
@@ -172,112 +179,29 @@ export function findClosestPackageRoot(
   return sortPaths(paths).find((p) => sourceFile.startsWith(p));
 }
 
-const configCache = new Map();
+const configCache = new Set();
 
-export function normalizeTsconfigOptions(
-  root: string,
-  sourceFile: string,
-  tsconfig?: boolean | string | NapiResolveOptions["tsconfig"],
-): NapiResolveOptions["tsconfig"] | undefined {
-  if (!tsconfig) return undefined;
+export function normalizeConfigFileOptions(
+  config?: boolean | string | ConfigFileOptions,
+  searchDirs: string[] = [],
+  defaultFilename = TSCONFIG_FILENAME,
+): ConfigFileOptions | undefined {
+  if (!config) return undefined;
 
-  if (typeof tsconfig === "object") {
-    return { ...defaultTsconfigOptions, ...tsconfig };
+  if (typeof config === "object") {
+    return { ...defaultConfigFileOptions, ...config };
   }
 
-  let tsconfigFilename: string | undefined;
-
-  const tsconfigPath = path.join(
-    root,
-    typeof tsconfig === "string" ? tsconfig : TSCONFIG_FILENAME,
+  const configPaths = searchDirs.map((dir: string) =>
+    path.join(dir, typeof config === "string" ? config : defaultFilename),
   );
 
-  if (fs.existsSync(tsconfigPath)) {
-    tsconfigFilename = tsconfigPath;
-  } else {
-    const tsconfigRes = getTsconfig(
-      path.dirname(sourceFile),
-      path.basename(tsconfigPath),
-      configCache,
-    );
+  for (const configPath of configPaths) {
+    if (configCache.has(configPath) || fs.existsSync(configPath)) {
+      configCache.add(configPath);
 
-    if (tsconfigRes?.path) {
-      tsconfigFilename = tsconfigRes.path;
+      return { ...defaultConfigFileOptions, configFile: configPath };
     }
-  }
-
-  return tsconfigFilename
-    ? { ...defaultTsconfigOptions, configFile: tsconfigFilename }
-    : undefined;
-}
-
-export function pathsToAlias(
-  paths?: Record<string, string[]>,
-  parent = "/",
-  baseUrl?: string,
-): Record<string, string[]> | undefined {
-  if (!paths) return undefined;
-
-  return Object.keys(paths).reduce(
-    (acc, key) => {
-      const normalizedKey = key.replace(/\/\*$/, "");
-
-      const normalizedValues = paths[key]
-        ?.map((value) => {
-          const cleanPath = value.replace(/\/\*$/, "");
-
-          return path.join(parent, baseUrl ?? "", cleanPath);
-        })
-        .filter(Boolean);
-
-      if (normalizedValues?.length > 0) {
-        acc[normalizedKey] = normalizedValues;
-      }
-
-      return acc;
-    },
-    {} as Record<string, string[]>,
-  );
-}
-
-export function getJsconfigAlias(
-  root: string,
-  sourceFile: string,
-  jsconfig: boolean | string,
-): Record<string, string[]> | undefined {
-  if (!jsconfig) return undefined;
-
-  const jsconfigPath = path.join(
-    root,
-    typeof jsconfig === "string" ? jsconfig : JSCONFIG_FILENAME,
-  );
-
-  if (fs.existsSync(jsconfigPath)) {
-    const jsconfigRes = parseTsconfig(jsconfigPath, configCache);
-
-    const alias = pathsToAlias(
-      jsconfigRes.compilerOptions?.paths,
-      path.dirname(jsconfigPath),
-      jsconfigRes.compilerOptions?.baseUrl,
-    );
-
-    return alias;
-  }
-
-  const jsconfigRes = getTsconfig(
-    path.dirname(sourceFile),
-    path.basename(jsconfigPath),
-    configCache,
-  );
-
-  if (jsconfigRes?.path) {
-    const alias = pathsToAlias(
-      jsconfigRes.config?.compilerOptions?.paths,
-      path.dirname(jsconfigRes.path),
-      jsconfigRes.config?.compilerOptions?.baseUrl,
-    );
-
-    return alias;
   }
 
   return undefined;

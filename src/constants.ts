@@ -1,6 +1,4 @@
-import type { NapiResolveOptions } from "oxc-resolver";
-
-import type { Options, PackageGlobOptions } from "./types";
+import type { ConfigFileOptions, Options, PackageGlobOptions } from "./types";
 
 export const defaultPackagesOptions = {
   patterns: ["."],
@@ -62,9 +60,9 @@ export const defaultOptions = {
   jsconfig: true,
 } satisfies Options;
 
-export const defaultTsconfigOptions = {
+export const defaultConfigFileOptions = {
   references: "auto",
-} satisfies Partial<NapiResolveOptions["tsconfig"]>;
+} satisfies Partial<ConfigFileOptions>;
 
 export const PNPM_WORKSPACE_FILENAME = "pnpm-workspace.yaml";
 

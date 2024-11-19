@@ -27,6 +27,8 @@ export interface PackageOptions extends PackageGlobOptions {
   pnpmWorkspace?: boolean | string;
 }
 
+export type ConfigFileOptions = NapiResolveOptions["tsconfig"];
+
 export interface Options
   extends Omit<NapiResolveOptions, "alias" | "tsconfig"> {
   /**
@@ -41,7 +43,7 @@ export interface Options
    * - `string` to specify the tsconfig.json relative path
    * - `object` to specify the tsconfig.json options
    */
-  tsconfig?: boolean | string | NapiResolveOptions["tsconfig"];
+  tsconfig?: boolean | string | ConfigFileOptions;
   /**
    * Use jsconfig.json to resolve the paths.
    *

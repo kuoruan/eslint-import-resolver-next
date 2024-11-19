@@ -3,31 +3,32 @@ import { ResolverFactory } from "oxc-resolver";
 import path from "path";
 import { cwd } from "process";
 
-import { defaultOptions } from "./constants";
+import {
+  defaultOptions,
+  JSCONFIG_FILENAME,
+  TSCONFIG_FILENAME,
+} from "./constants";
 import type { Options, ResolvedResult } from "./types";
 import {
   cleanModulePath,
   findClosestPackageRoot,
   findPackages,
-  getJsconfigAlias,
   normalizeAlias,
+  normalizeConfigFileOptions,
   normalizePackageGlobOptions,
-  normalizeTsconfigOptions,
+  unique,
 } from "./utils";
 
 const processCwd = cwd();
 
 const pathToPackagesMap = new Map<string, string[]>();
+let resolverCache: ResolverFactory | null = null;
 
 export default function resolve(
   modulePath: string,
   sourceFile: string,
   config?: Options | null,
 ): ResolvedResult {
-  if (modulePath.startsWith(".")) {
-    return { found: false };
-  }
-
   const cleanedPath = cleanModulePath(modulePath);
 
   if (builtinModules.includes(cleanedPath)) {
@@ -43,6 +44,23 @@ export default function resolve(
     ...defaultOptions,
     ...config,
   };
+
+  const sourceFileDir = path.dirname(sourceFile);
+
+  // relative path
+  if (modulePath.startsWith(".")) {
+    if (!resolverCache) {
+      resolverCache = new ResolverFactory(restOptions);
+    }
+
+    const result = resolverCache.sync(sourceFileDir, modulePath);
+
+    if (result.path) {
+      return { found: true, path: result.path };
+    }
+
+    return { found: false };
+  }
 
   let resolveRoots = roots?.length ? roots : [processCwd];
 
@@ -65,9 +83,7 @@ export default function resolve(
       if (filePackage) {
         sourceFilePackage = filePackage;
 
-        resolveRoots = Array.from(
-          new Set([sourceFilePackage, ...resolveRoots]),
-        );
+        resolveRoots = unique([sourceFilePackage, ...resolveRoots]);
 
         break;
       }
@@ -85,36 +101,32 @@ export default function resolve(
     return { found: false };
   }
 
-  let resolveAlias = normalizeAlias(alias, sourceFilePackage);
+  const resolveAlias = normalizeAlias(alias, sourceFilePackage);
 
-  const tsconfigOptions = normalizeTsconfigOptions(
-    sourceFilePackage,
-    sourceFile,
+  const searchDirs = unique([sourceFileDir, sourceFilePackage]);
+
+  let configFileOptions = normalizeConfigFileOptions(
     tsconfig,
+    searchDirs,
+    TSCONFIG_FILENAME,
   );
 
-  if (!tsconfigOptions) {
-    const jsconfigAlias = getJsconfigAlias(
-      sourceFilePackage,
-      sourceFile,
+  if (!configFileOptions) {
+    configFileOptions = normalizeConfigFileOptions(
       jsconfig,
+      searchDirs,
+      JSCONFIG_FILENAME,
     );
-
-    if (jsconfigAlias) {
-      resolveAlias = { ...jsconfigAlias, ...resolveAlias };
-    }
   }
 
   const resolver = new ResolverFactory({
     alias: resolveAlias,
-    tsconfig: tsconfigOptions,
+    tsconfig: configFileOptions,
     roots: resolveRoots,
     ...restOptions,
   });
 
-  const sourceDir = path.dirname(sourceFile);
-
-  const result = resolver.sync(sourceDir, modulePath);
+  const result = resolver.sync(sourceFileDir, modulePath);
   if (result.path) {
     return { found: true, path: result.path };
   }
