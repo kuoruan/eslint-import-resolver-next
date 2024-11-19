@@ -33,11 +33,45 @@ module.exports = {
 };
 ```
 
+with Mono-repo:
+
+```js
+module.exports = {
+  // ... other configuration options
+  settings: {
+    "import/resolver": {
+      next: {
+        packages: ["packages/*"],
+      },
+    },
+  },
+};
+```
+
+pnpm-workspaces:
+
+```js
+module.exports = {
+  // ... other configuration options
+  settings: {
+    "import/resolver": {
+      next: {
+        packages: {
+          pnpmWorkspace: true,
+          includeRoot: true,
+        },
+      },
+    },
+  },
+};
+```
+
 ## Options
 
 - `roots` (Array<string>): The directories to search for modules. Default: `["."]`.
 
 - `alias` (Record<string, string | string[]>): The paths alias. Default: `undefined`.
+  * The alias can be set as relative paths. relative paths are resolved from the package directory.
 
 - `tsconfig` (boolean | string | object): Weather to use the `tsconfig.json` file. Default: `true`.
   * If `true`, the resolver will try to find the `tsconfig.json` file in the package directory.
@@ -60,6 +94,6 @@ All other options are passed to the `oxc-resolver` package. See the [oxc-resolve
 - `patterns` (string[]): The patterns to search for packages. Default: `["."]`.
 - `ignore` (string[]): The directories to ignore. Default: `["**/node_modules/**", "**/test/**", "**/tests/**"]`.
 - `includeRoot` (boolean): Weather to include the root directory. Default: `false`.
-- `pnpmWorkspace` (boolean | string): Weather to use the `pnpm-workspace.yaml` file to find packages. Default: `true`.
+- `pnpmWorkspace` (boolean | string): Weather to use the `pnpm-workspace.yaml` file to find packages. Default: `false`.
   * If `true`, the resolver will try to find the `pnpm-workspace.yaml` file in the package directory.
   * If a string, define the path to the `pnpm-workspace.yaml` file.
