@@ -238,11 +238,12 @@ export function normalizeConfigFileOptions(
   if (configCache.has(cacheKey)) {
     configFiles = configCache.get(cacheKey)!;
   } else {
-    configFiles = fastGlob.globSync(`**/${filename}`, {
+    const paths = fastGlob.globSync(`**/${filename}`, {
       cwd: fastGlob.convertPathToPattern(packageDir),
       ignore: ["**/node_modules/**"],
-      absolute: true,
     });
+
+    configFiles = paths.map((p) => path.join(packageDir, p));
 
     configCache.set(cacheKey, configFiles);
   }
