@@ -151,8 +151,6 @@ export function readYamlFile<T>(filePath: string): T | null {
   try {
     doc = yaml.load(fs.readFileSync(filePath, "utf8")) as T;
   } catch {
-    // ignore
-
     doc = null;
   }
 
