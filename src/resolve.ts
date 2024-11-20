@@ -126,9 +126,9 @@ export default function resolve(
     { config: jsconfig, filename: JSCONFIG_FILENAME },
   ] as const) {
     configFileOptions = normalizeConfigFileOptions(
+      c.config,
       packageDir,
       sourceFile,
-      c.config,
       c.filename,
     );
 

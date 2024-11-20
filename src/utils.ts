@@ -58,12 +58,14 @@ export function cleanModulePath(modulePath: string) {
 export function normalizePatterns(patterns: string[]): string[] {
   const normalizedPatterns: string[] = [];
   for (const pattern of patterns) {
+    const convertedPattern = pattern.replace(/\\/g, "/").replace(/\/$/, "");
+
     // We should add separate pattern for each extension
     // for some reason, fast-glob is buggy with /package.{json,yaml,json5} pattern
     normalizedPatterns.push(
-      pattern.replace(/\/?$/, "/package.json"),
-      pattern.replace(/\/?$/, "/package.json5"),
-      pattern.replace(/\/?$/, "/package.yaml"),
+      convertedPattern + "/package.json",
+      convertedPattern + "/package.json5",
+      convertedPattern + "/package.yaml",
     );
   }
   return normalizedPatterns;
@@ -97,7 +99,10 @@ export function findPackages(
     return [];
   }
 
-  const paths = fastGlob.sync(normalizedPatterns, { cwd: root, ignore });
+  const paths = fastGlob.globSync(normalizedPatterns, {
+    cwd: fastGlob.convertPathToPattern(root),
+    ignore,
+  });
 
   return unique(
     paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
@@ -213,9 +218,9 @@ export function findClosestConfigFile(
 const configCache = new Map<string, string[]>();
 
 export function normalizeConfigFileOptions(
+  config: boolean | string | ConfigFileOptions | undefined,
   packageDir: string,
   sourceFile: string,
-  config?: boolean | string | ConfigFileOptions,
   defaultFilename = TSCONFIG_FILENAME,
 ): ConfigFileOptions | undefined {
   if (!config) return undefined;
@@ -233,8 +238,8 @@ export function normalizeConfigFileOptions(
   if (configCache.has(cacheKey)) {
     configFiles = configCache.get(cacheKey)!;
   } else {
-    configFiles = fastGlob.sync(`**/${filename}`, {
-      cwd: packageDir,
+    configFiles = fastGlob.globSync(`**/${filename}`, {
+      cwd: fastGlob.convertPathToPattern(packageDir),
       ignore: ["**/node_modules/**"],
       absolute: true,
     });
@@ -256,8 +261,8 @@ export function normalizeConfigFileOptions(
 }
 
 export function normalizeAlias(
-  alias?: Record<string, string | string[]>,
-  parent = "/",
+  alias: Record<string, string | string[]> | undefined,
+  parent: string,
 ): Record<string, string[]> | undefined {
   if (!alias) return undefined;
 
