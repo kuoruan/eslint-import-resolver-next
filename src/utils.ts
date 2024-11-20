@@ -114,19 +114,21 @@ export function sortPaths(paths: string[]): string[] {
   const pathDepths = new Map<string, number>();
 
   const getPathDepth = (p: string): number => {
+    if (!p) return 0;
+
     if (pathDepths.has(p)) {
       return pathDepths.get(p)!;
     }
 
-    const depth = p === "/" ? 0 : p.split(path.sep).filter(Boolean).length;
+    const depth = p.split(path.sep).filter(Boolean).length;
     pathDepths.set(p, depth);
 
     return depth;
   };
 
   return paths.sort((a, b) => {
-    if (a === "/") return -1;
-    if (b === "/") return 1;
+    if (a === "/") return 1;
+    if (b === "/") return -1;
 
     const aDepth = getPathDepth(a);
     const bDepth = getPathDepth(b);
@@ -135,7 +137,7 @@ export function sortPaths(paths: string[]): string[] {
       return bDepth - aDepth;
     }
 
-    return a.localeCompare(b);
+    return b.localeCompare(a);
   });
 }
 
