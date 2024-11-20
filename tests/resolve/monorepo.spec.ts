@@ -18,6 +18,21 @@ describe("Test monorepo", () => {
     });
   });
 
+  it("pnpm monorepo", () => {
+    expect(
+      resolve("@lib/foo", getMonoRepoPath("main/index.js"), {
+        roots,
+        alias: { "@lib": "./lib" },
+        packages: {
+          pnpmWorkspace: true,
+        },
+      }),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("main/lib/foo.js"),
+    });
+  });
+
   it("tsconfig", () => {
     expect(
       resolve("@/a", getMonoRepoPath("packages/ts/index.ts"), {

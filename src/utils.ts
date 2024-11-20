@@ -147,6 +147,10 @@ export function sortPaths(paths: string[]): string[] {
 }
 
 export function readYamlFile<T>(filePath: string): T | null {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
   let doc: T | null;
   try {
     doc = yaml.load(fs.readFileSync(filePath, "utf8")) as T;
@@ -175,24 +179,22 @@ export function normalizePackageGlobOptions(
         : PNPM_WORKSPACE_FILENAME,
     );
 
-    if (fs.existsSync(pnpmWorkspacePath)) {
-      const pnpmWorkspace =
-        readYamlFile<Record<"packages", string[]>>(pnpmWorkspacePath);
+    const pnpmWorkspaceRes =
+      readYamlFile<Record<"packages", string[]>>(pnpmWorkspacePath);
 
-      if (pnpmWorkspace?.packages?.length) {
-        packagePatterns = pnpmWorkspace.packages;
-      }
+    if (pnpmWorkspaceRes?.packages?.length) {
+      packagePatterns = pnpmWorkspaceRes.packages;
     }
   }
 
-  if (patterns) {
+  if (patterns?.length) {
     packagePatterns = packagePatterns
-      ? [...packagePatterns, ...patterns]
+      ? unique([...packagePatterns, ...patterns])
       : patterns;
   }
 
   return {
-    patterns: packagePatterns ? unique(packagePatterns) : undefined,
+    patterns: packagePatterns?.length ? packagePatterns : undefined,
     ...restOptions,
   };
 }
