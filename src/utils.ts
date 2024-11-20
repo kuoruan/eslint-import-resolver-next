@@ -188,9 +188,11 @@ export function normalizePackageGlobOptions(
   }
 
   if (patterns?.length) {
-    packagePatterns = packagePatterns
-      ? unique([...packagePatterns, ...patterns])
+    const mergedPatterns = packagePatterns
+      ? [...packagePatterns, ...patterns]
       : patterns;
+
+    packagePatterns = unique(mergedPatterns.filter(Boolean));
   }
 
   return {
