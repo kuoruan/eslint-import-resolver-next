@@ -13,7 +13,7 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.node,
-        ...globals.mocha,
+        ...globals.jest,
       },
       parserOptions: {
         projectService: true,
