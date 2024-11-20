@@ -100,7 +100,7 @@ export function findPackages(
   }
 
   const paths = fastGlob.globSync(normalizedPatterns, {
-    cwd: fastGlob.convertPathToPattern(root),
+    cwd: root,
     ignore,
   });
 
@@ -239,7 +239,7 @@ export function normalizeConfigFileOptions(
     configFiles = configCache.get(cacheKey)!;
   } else {
     const paths = fastGlob.globSync(`**/${filename}`, {
-      cwd: fastGlob.convertPathToPattern(packageDir),
+      cwd: packageDir,
       ignore: ["**/node_modules/**"],
     });
 
