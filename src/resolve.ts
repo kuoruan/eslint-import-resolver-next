@@ -21,7 +21,7 @@ import {
 
 const root = cwd();
 
-let resolverCache: ResolverFactory | null = null;
+let relativeResolver: ResolverFactory | null = null;
 
 /**
  * Resolves relative path imports
@@ -36,13 +36,13 @@ function resolveRelativePath(
   modulePath: string,
   options: NapiResolveOptions,
 ): ResolvedResult {
-  if (!resolverCache) {
-    resolverCache = new ResolverFactory(options);
+  if (!relativeResolver) {
+    relativeResolver = new ResolverFactory(options);
   }
 
   const sourceFileDir = path.dirname(sourceFile);
 
-  const result = resolverCache.sync(sourceFileDir, modulePath);
+  const result = relativeResolver.sync(sourceFileDir, modulePath);
 
   if (result.path) {
     return { found: true, path: result.path };
@@ -52,6 +52,7 @@ function resolveRelativePath(
 }
 
 const pathToPackagesMap = new Map<string, string[]>();
+let resolver: ResolverFactory | null = null;
 
 export default function resolve(
   modulePath: string,
@@ -137,12 +138,25 @@ export default function resolve(
     }
   }
 
-  const resolver = new ResolverFactory({
-    alias: resolveAlias,
-    tsconfig: configFileOptions,
-    roots: resolveRoots,
-    ...restOptions,
-  });
+  if (!resolver) {
+    resolver = new ResolverFactory({
+      alias: resolveAlias,
+      tsconfig: configFileOptions,
+      roots: resolveRoots,
+      ...restOptions,
+    });
+  } else {
+    const oldResolver = resolver;
+
+    resolver = oldResolver.cloneWithOptions({
+      alias: resolveAlias,
+      tsconfig: configFileOptions,
+      roots: resolveRoots,
+      ...restOptions,
+    });
+
+    oldResolver.clearCache();
+  }
 
   const result = resolver.sync(path.dirname(sourceFile), modulePath);
   if (result.path) {
