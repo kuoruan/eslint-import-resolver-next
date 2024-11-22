@@ -263,11 +263,17 @@ export function normalizeConfigFileOptions(
   return undefined;
 }
 
+const aliasCache = new Map<string, Record<string, string[]>>();
+
 export function normalizeAlias(
   alias: Record<string, string | string[]> | undefined,
   parent: string,
 ): Record<string, string[]> | undefined {
   if (!alias) return undefined;
+
+  if (aliasCache.has(parent)) {
+    return aliasCache.get(parent);
+  }
 
   return Object.keys(alias).reduce(
     (acc, key) => {
