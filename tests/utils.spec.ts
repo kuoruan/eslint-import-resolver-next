@@ -1,6 +1,7 @@
 import {
   findClosestConfigFile,
   findClosestPackageRoot,
+  hashObject,
   normalizeAlias,
   normalizePatterns,
   sortPaths,
@@ -378,5 +379,59 @@ describe("test normalize alias", () => {
   it("normalize alias with no alias", () => {
     const normalizedAlias = normalizeAlias(undefined, "/");
     expect(normalizedAlias).toBeUndefined();
+  });
+});
+
+describe("test hash object", () => {
+  it("hash object", () => {
+    const obj = {
+      a: 1,
+      b: "string",
+      c: [1, 2, 3],
+      d: { e: "f" },
+    };
+
+    const hash = hashObject(obj);
+    expect(hash).toMatchSnapshot();
+  });
+
+  it("hash object with different order", () => {
+    const obj1 = {
+      a: 1,
+      b: "string",
+      c: [1, 2, 3],
+      d: { e: "f" },
+    };
+
+    const obj2 = {
+      b: "string",
+      a: 1,
+      d: { e: "f" },
+      c: [1, 2, 3],
+    };
+
+    const hash1 = hashObject(obj1);
+    const hash2 = hashObject(obj2);
+    expect(hash1).toBe(hash2);
+  });
+
+  it("hash object with different values", () => {
+    const obj1 = {
+      a: 1,
+      b: "string",
+      c: [1, 2, 3],
+      d: { e: "f" },
+    };
+
+    const obj2 = {
+      a: 2,
+      b: "string",
+      c: [1, 2, 3],
+      d: { e: "f" },
+    };
+
+    const hash1 = hashObject(obj1);
+    const hash2 = hashObject(obj2);
+    expect(hash1).not.toBe(hash2);
   });
 });
