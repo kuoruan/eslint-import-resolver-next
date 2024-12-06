@@ -72,3 +72,9 @@ export interface ResultFound {
 }
 
 export type ResolvedResult = ResultNotFound | ResultFound;
+
+export interface NewResolver {
+  interfaceVersion: 3;
+  name?: string; // This will be included in the debug log
+  resolve: (modulePath: string, sourceFile: string) => ResolvedResult;
+}
