@@ -11,7 +11,13 @@
     "types": "./lib/index.d.ts"
   },
   "description": "The next resolver for `eslint-plugin-import` or `eslint-plugin-import-x`",
-  "keywords": ["eslint", "eslint-plugin-import", "eslint-plugin-import-x", "eslint-import-resolver", "oxc-resolver"],
+  "keywords": [
+    "eslint",
+    "eslint-plugin-import",
+    "eslint-plugin-import-x",
+    "eslint-import-resolver",
+    "oxc-resolver"
+  ],
   "repository": "https://github.com/kuoruan/eslint-import-resolver-next",
   "license": "MIT",
   "files": [
@@ -30,7 +36,8 @@
   "dependencies": {
     "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.0",
-    "oxc-resolver": "^2.0.1"
+    "oxc-resolver": "^2.0.1",
+    "stable-hash": "^0.0.4"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.24.7",

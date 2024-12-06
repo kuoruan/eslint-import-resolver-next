@@ -13,6 +13,7 @@ import {
   cleanModulePath,
   findClosestPackageRoot,
   findPackages,
+  hashObject,
   normalizeAlias,
   normalizeConfigFileOptions,
   normalizePackageGlobOptions,
@@ -52,7 +53,8 @@ function resolveRelativePath(
 }
 
 const pathToPackagesMap = new Map<string, string[]>();
-let resolver: ResolverFactory | null = null;
+
+const resolverCache = new Map<string, ResolverFactory>();
 
 export default function resolve(
   modulePath: string,
@@ -138,24 +140,24 @@ export default function resolve(
     }
   }
 
-  if (!resolver) {
-    resolver = new ResolverFactory({
-      alias: resolveAlias,
-      tsconfig: configFileOptions,
-      roots: resolveRoots,
-      ...restOptions,
-    });
+  const specificOptions = {
+    alias: resolveAlias,
+    tsconfig: configFileOptions,
+    roots: resolveRoots,
+  } as const;
+
+  const hashKey = hashObject(specificOptions);
+
+  let resolver: ResolverFactory;
+  if (resolverCache.has(hashKey)) {
+    resolver = resolverCache.get(hashKey)!;
   } else {
-    const oldResolver = resolver;
-
-    resolver = oldResolver.cloneWithOptions({
-      alias: resolveAlias,
-      tsconfig: configFileOptions,
-      roots: resolveRoots,
+    resolver = new ResolverFactory({
+      ...specificOptions,
       ...restOptions,
     });
 
-    oldResolver.clearCache();
+    resolverCache.set(hashKey, resolver);
   }
 
   const result = resolver.sync(path.dirname(sourceFile), modulePath);

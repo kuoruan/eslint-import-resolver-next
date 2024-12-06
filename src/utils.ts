@@ -1,7 +1,9 @@
+import crypto from "crypto";
 import fastGlob from "fast-glob";
 import fs from "fs";
 import yaml from "js-yaml";
 import path from "path";
+import stableHash from "stable-hash";
 
 import {
   defaultConfigFileOptions,
@@ -146,6 +148,12 @@ export function sortPaths(paths: string[]): string[] {
   });
 }
 
+/**
+ * Read a yaml file.
+ *
+ * @param filePath {string} - the file path to read
+ * @returns {T | null} - the parsed yaml file
+ */
 export function readYamlFile<T>(filePath: string): T | null {
   if (!fs.existsSync(filePath)) {
     return null;
@@ -161,6 +169,13 @@ export function readYamlFile<T>(filePath: string): T | null {
   return doc;
 }
 
+/**
+ * Normalize package glob options.
+ *
+ * @param opts {PackageOptions | string[]} - the package options
+ * @param root {string} - the root path
+ * @returns {PackageGlobOptions} - the normalized package glob options
+ */
 export function normalizePackageGlobOptions(
   opts: PackageOptions | string[],
   root: string,
@@ -201,6 +216,13 @@ export function normalizePackageGlobOptions(
   };
 }
 
+/**
+ * Find the closest package from the source file.
+ *
+ * @param sourceFile {string} - the source file
+ * @param paths {string[]} - the paths to search
+ * @returns {string | undefined} - the closest package root
+ */
 export function findClosestPackageRoot(
   sourceFile: string,
   paths: string[],
@@ -290,4 +312,14 @@ export function normalizeAlias(
     },
     {} as Record<string, string[]>,
   );
+}
+
+/**
+ * Get the hash of an object.
+ *
+ * @param obj {unknown} - the object to hash
+ * @returns - the hash of the object
+ */
+export function hashObject(obj: unknown): string {
+  return crypto.createHash("sha256").update(stableHash(obj)).digest("hex");
 }
