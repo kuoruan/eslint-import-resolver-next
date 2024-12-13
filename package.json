@@ -1,6 +1,6 @@
 {
   "name": "eslint-import-resolver-next",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "main": "./lib/index.cjs",
   "module": "./lib/index.js",
@@ -10,6 +10,7 @@
     "require": "./lib/index.cjs",
     "types": "./lib/index.d.ts"
   },
+  "sideEffects": false,
   "description": "The next resolver for `eslint-plugin-import` or `eslint-plugin-import-x`",
   "keywords": [
     "eslint",
