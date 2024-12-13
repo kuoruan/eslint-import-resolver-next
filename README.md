@@ -4,7 +4,7 @@
 [![npm](https://img.shields.io/npm/dw/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
 [![npm](https://img.shields.io/npm/l/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
 
-The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) or [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) that resolves modules with `oxc-resolver`.
+The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) or [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) that resolves modules with [`oxc-resolver`](https://github.com/oxc-project/oxc-resolver).
 
 ## Features
 
@@ -66,6 +66,21 @@ module.exports = {
         },
       },
     },
+  },
+};
+```
+
+3. For [eslint-plugin-import-x](https://github.com/un-ts/eslint-plugin-import-x/) `resolver-next`
+
+```js
+const { createNextImportResolver } = require("eslint-import-resolver-next");
+
+module.exports = {
+  // ... other configuration options
+  settings: {
+    "import-x/resolver-next": [createNextImportResolver({
+      // Options for the resolver
+    })],
   },
 };
 ```
