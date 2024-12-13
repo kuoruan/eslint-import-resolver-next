@@ -1,5 +1,9 @@
 # eslint-import-resolver-next
 
+[![npm](https://img.shields.io/npm/v/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
+[![npm](https://img.shields.io/npm/dw/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
+[![npm](https://img.shields.io/npm/l/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
+
 The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) or [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) that resolves modules with `oxc-resolver`.
 
 ## Features
