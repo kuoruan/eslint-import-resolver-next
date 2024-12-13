@@ -9,6 +9,7 @@ export default defineConfig({
       dir: "lib",
       format: "cjs",
       entryFileNames: "[name].cjs",
+      exports: "named",
     },
     {
       dir: "lib",
