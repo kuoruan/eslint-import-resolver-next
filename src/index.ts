@@ -1,4 +1,4 @@
-import resolve from "./resolve";
+import { createNextImportResolver, resolve } from "./resolve";
 import type {
   NewResolver,
   Options,
@@ -8,15 +8,6 @@ import type {
 
 const interfaceVersion = 2;
 
-export function createNextImportResolver(options: Options): NewResolver {
-  return {
-    interfaceVersion: 3,
-    name: "eslint-import-resolver-next",
-    resolve: (modulePath: string, sourceFile: string) =>
-      resolve(modulePath, sourceFile, options),
-  };
-}
-
 export type { NewResolver, Options, PackageGlobOptions, PackageOptions };
 
-export { interfaceVersion, resolve };
+export { createNextImportResolver, interfaceVersion, resolve };

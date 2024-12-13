@@ -1,62 +1,19 @@
 import { builtinModules } from "module";
-import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
-import path from "path";
 import { cwd } from "process";
 
-import {
-  defaultOptions,
-  JSCONFIG_FILENAME,
-  TSCONFIG_FILENAME,
-} from "./constants";
-import type { ConfigFileOptions, Options, ResolvedResult } from "./types";
+import { defaultOptions } from "./constants";
+import { resolveModulePath, resolveRelativePath } from "./resolver";
+import type { NewResolver, Options, ResolvedResult } from "./types";
 import {
   cleanModulePath,
   findClosestPackageRoot,
-  findPackages,
-  hashObject,
+  findWorkspacePackages,
   normalizeAlias,
   normalizeConfigFileOptions,
-  normalizePackageGlobOptions,
   unique,
 } from "./utils";
 
-const root = cwd();
-
-let relativeResolver: ResolverFactory | null = null;
-
-/**
- * Resolves relative path imports
- *
- * @param sourceFile - The file that imports the module
- * @param modulePath - The module path to resolve
- * @param options - The resolver options
- * @returns
- */
-function resolveRelativePath(
-  sourceFile: string,
-  modulePath: string,
-  options: NapiResolveOptions,
-): ResolvedResult {
-  if (!relativeResolver) {
-    relativeResolver = new ResolverFactory(options);
-  }
-
-  const sourceFileDir = path.dirname(sourceFile);
-
-  const result = relativeResolver.sync(sourceFileDir, modulePath);
-
-  if (result.path) {
-    return { found: true, path: result.path };
-  }
-
-  return { found: false };
-}
-
-const pathToPackagesMap = new Map<string, string[]>();
-
-const resolverCache = new Map<string, ResolverFactory>();
-
-export default function resolve(
+export function resolve(
   modulePath: string,
   sourceFile: string,
   config?: Options | null,
@@ -82,88 +39,83 @@ export default function resolve(
     return resolveRelativePath(sourceFile, modulePath, restOptions);
   }
 
-  let resolveRoots = roots?.length ? roots : [root];
+  const resolveRoots = roots?.length ? roots : [cwd()];
 
-  let packageDir: string | undefined;
+  const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
-  if (packages && typeof packages === "object") {
-    for (const r of resolveRoots) {
-      // find all packages in the root
-      let paths = pathToPackagesMap.get(r);
-      if (!paths) {
-        paths = findPackages(r, normalizePackageGlobOptions(packages, r));
-
-        pathToPackagesMap.set(r, paths);
-      }
-
-      if (!paths.length) continue;
-
-      const filePackage = findClosestPackageRoot(sourceFile, paths);
-      if (filePackage) {
-        packageDir = filePackage;
-
-        resolveRoots = unique([packageDir, ...resolveRoots]);
-
-        break;
-      }
-    }
-  } else {
-    const findPackage = findClosestPackageRoot(sourceFile, resolveRoots);
-
-    if (findPackage) {
-      packageDir = findPackage;
-    }
-  }
+  const packageDir = findClosestPackageRoot(sourceFile, workspacePackages);
 
   // file not find in any package
   if (!packageDir) {
     return { found: false };
   }
 
+  const packageRoots = unique([packageDir, ...resolveRoots]);
+
   const resolveAlias = normalizeAlias(alias, packageDir);
 
-  let configFileOptions: ConfigFileOptions | undefined;
+  const configFileOptions = normalizeConfigFileOptions(
+    { tsconfig, jsconfig },
+    packageDir,
+    sourceFile,
+  );
 
-  for (const c of [
-    { config: tsconfig, filename: TSCONFIG_FILENAME },
-    { config: jsconfig, filename: JSCONFIG_FILENAME },
-  ] as const) {
-    configFileOptions = normalizeConfigFileOptions(
-      c.config,
-      packageDir,
-      sourceFile,
-      c.filename,
-    );
-
-    if (configFileOptions) {
-      break;
-    }
-  }
-
-  const specificOptions = {
+  return resolveModulePath(sourceFile, modulePath, {
     alias: resolveAlias,
     tsconfig: configFileOptions,
-    roots: resolveRoots,
-  } as const;
+    roots: packageRoots,
+    ...restOptions,
+  });
+}
 
-  const hashKey = hashObject(specificOptions);
+export function createNextImportResolver(config?: Options | null): NewResolver {
+  const { roots, alias, packages, jsconfig, tsconfig, ...restOptions } = {
+    ...defaultOptions,
+    ...config,
+  };
 
-  let resolver: ResolverFactory;
-  if (resolverCache.has(hashKey)) {
-    resolver = resolverCache.get(hashKey)!;
-  } else {
-    resolver = new ResolverFactory({
-      ...specificOptions,
-      ...restOptions,
-    });
+  const resolveRoots = roots?.length ? roots : [cwd()];
 
-    resolverCache.set(hashKey, resolver);
-  }
+  const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
-  const result = resolver.sync(path.dirname(sourceFile), modulePath);
-  if (result.path) {
-    return { found: true, path: result.path };
-  }
+  return {
+    interfaceVersion: 3,
+    name: "eslint-import-resolver-next",
+    resolve: (modulePath: string, sourceFile: string) => {
+      const cleanedPath = cleanModulePath(modulePath);
 
-  return { found: false };
+      if (builtinModules.includes(cleanedPath)) {
+        return { found: true, path: null };
+      }
+
+      // wrong node module path
+      if (modulePath.startsWith("node:")) {
+        return { found: false };
+      }
+
+      const packageDir = findClosestPackageRoot(sourceFile, workspacePackages);
+
+      // file not find in any package
+      if (!packageDir) {
+        return { found: false };
+      }
+
+      const packageRoots = unique([packageDir, ...resolveRoots]);
+
+      const resolveAlias = normalizeAlias(alias, packageDir);
+
+      const configFileOptions = normalizeConfigFileOptions(
+        { tsconfig, jsconfig },
+        packageDir,
+        sourceFile,
+      );
+
+      return resolveModulePath(sourceFile, modulePath, {
+        alias: resolveAlias,
+        tsconfig: configFileOptions,
+        roots: packageRoots,
+        ...restOptions,
+      });
+    },
+  };
 }

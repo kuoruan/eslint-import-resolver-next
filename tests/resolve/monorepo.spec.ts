@@ -1,6 +1,6 @@
 import { getMonoRepoPath } from "@tests/utils";
 
-import resolve from "@/resolve";
+import { createNextImportResolver, resolve } from "@/resolve";
 
 describe("Test monorepo", () => {
   const roots = [getMonoRepoPath()];
@@ -16,6 +16,19 @@ describe("Test monorepo", () => {
       found: true,
       path: getMonoRepoPath("main/lib/foo.js"),
     });
+
+    const resolverV3 = createNextImportResolver({
+      roots,
+      alias: { "@lib": "./lib" },
+      packages: ["main"],
+    });
+
+    expect(
+      resolverV3.resolve("@lib/foo", getMonoRepoPath("main/index.js")),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("main/lib/foo.js"),
+    });
   });
 
   it("pnpm monorepo", () => {
@@ -27,6 +40,21 @@ describe("Test monorepo", () => {
           pnpmWorkspace: true,
         },
       }),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("main/lib/foo.js"),
+    });
+
+    const resolverV3 = createNextImportResolver({
+      roots,
+      alias: { "@lib": "./lib" },
+      packages: {
+        pnpmWorkspace: true,
+      },
+    });
+
+    expect(
+      resolverV3.resolve("@lib/foo", getMonoRepoPath("main/index.js")),
     ).deep.equal({
       found: true,
       path: getMonoRepoPath("main/lib/foo.js"),
@@ -56,6 +84,37 @@ describe("Test monorepo", () => {
       resolve("#/root", getMonoRepoPath("packages/ts/tests/foo/b.spec.ts"), {
         roots,
       }),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("packages/ts/root.ts"),
+    });
+
+    const resolverV3 = createNextImportResolver({
+      roots,
+    });
+
+    expect(
+      resolverV3.resolve("@/a", getMonoRepoPath("packages/ts/index.ts")),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("packages/ts/src/a.ts"),
+    });
+
+    expect(
+      resolverV3.resolve(
+        "@src/a",
+        getMonoRepoPath("packages/ts/tests/a.spec.ts"),
+      ),
+    ).deep.equal({
+      found: true,
+      path: getMonoRepoPath("packages/ts/src/a.ts"),
+    });
+
+    expect(
+      resolverV3.resolve(
+        "#/root",
+        getMonoRepoPath("packages/ts/tests/foo/b.spec.ts"),
+      ),
     ).deep.equal({
       found: true,
       path: getMonoRepoPath("packages/ts/root.ts"),

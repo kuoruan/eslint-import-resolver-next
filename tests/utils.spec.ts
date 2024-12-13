@@ -301,6 +301,31 @@ describe("test findClosestConfigFile", () => {
       expect(closestConfig).toBe("/a/b/config.json");
     }
   });
+
+  it('find closest config file with "tsconfig" filename', () => {
+    if (process.platform === "win32") {
+      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
+      const configFiles = [
+        "C:\\a\\b\\c\\jsconfig.json",
+        "C:\\a\\b\\c\\tsconfig.json",
+      ];
+      const closestConfig = findClosestConfigFile(
+        sourceFile,
+        configFiles,
+        "tsconfig.json",
+      );
+      expect(closestConfig).toBe("C:\\a\\b\\c\\tsconfig.json");
+    } else {
+      const sourceFile = "/a/b/c/d/file.ts";
+      const configFiles = ["/a/b/c/jsconfig.json", "/a/b/c/tsconfig.json"];
+      const closestConfig = findClosestConfigFile(
+        sourceFile,
+        configFiles,
+        "tsconfig.json",
+      );
+      expect(closestConfig).toBe("/a/b/c/tsconfig.json");
+    }
+  });
 });
 
 describe("test normalize alias", () => {

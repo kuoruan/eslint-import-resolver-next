@@ -6,8 +6,17 @@ import path from "path";
 import stableHash from "stable-hash";
 
 import {
+  getConfigFilesCache,
+  getPackagesCache,
+  getYamlCache,
+  setConfigFilesCache,
+  setPackagesCache,
+  setYamlCache,
+} from "./cache";
+import {
   defaultConfigFileOptions,
   defaultPackagesOptions,
+  JSCONFIG_FILENAME,
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants";
@@ -74,41 +83,15 @@ export function normalizePatterns(patterns: string[]): string[] {
 }
 
 /**
+ * Get the depth of a path.
  *
- * Copy from https://github.com/pnpm/pnpm/blob/19d5b51558716025b9c32af16abcaa009421f835/fs/find-packages/src/index.ts
- *
- * @param root
- * @param opts
- * @returns
+ * @param p {string} - the path
+ * @returns {number} - the depth of the path
  */
-export function findPackages(
-  root: string,
-  opts?: PackageGlobOptions,
-): string[] {
-  const { patterns, includeRoot, ignore } = {
-    ...defaultPackagesOptions,
-    ...opts,
-  };
+export function getPathDepth(p: string): number {
+  if (!p) return 0;
 
-  const normalizedPatterns = normalizePatterns(
-    patterns ?? defaultPackagesOptions.patterns,
-  );
-  if (includeRoot) {
-    normalizedPatterns.push(...normalizePatterns(["."]));
-  }
-
-  if (!normalizedPatterns.length) {
-    return [];
-  }
-
-  const paths = fastGlob.globSync(normalizedPatterns, {
-    cwd: root,
-    ignore,
-  });
-
-  return unique(
-    paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
-  );
+  return p.split(path.sep).filter(Boolean).length;
 }
 
 /**
@@ -118,21 +101,6 @@ export function findPackages(
  * @returns
  */
 export function sortPaths(paths: string[]): string[] {
-  const pathDepths = new Map<string, number>();
-
-  const getPathDepth = (p: string): number => {
-    if (!p) return 0;
-
-    if (pathDepths.has(p)) {
-      return pathDepths.get(p)!;
-    }
-
-    const depth = p.split(path.sep).filter(Boolean).length;
-    pathDepths.set(p, depth);
-
-    return depth;
-  };
-
   return paths.sort((a, b) => {
     if (a === "/") return 1;
     if (b === "/") return -1;
@@ -155,6 +123,9 @@ export function sortPaths(paths: string[]): string[] {
  * @returns {T | null} - the parsed yaml file
  */
 export function readYamlFile<T>(filePath: string): T | null {
+  const cache = getYamlCache(filePath);
+  if (cache) return cache as T;
+
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -165,6 +136,8 @@ export function readYamlFile<T>(filePath: string): T | null {
   } catch {
     doc = null;
   }
+
+  setYamlCache(filePath, doc);
 
   return doc;
 }
@@ -217,6 +190,53 @@ export function normalizePackageGlobOptions(
 }
 
 /**
+ *
+ * Copy from https://github.com/pnpm/pnpm/blob/19d5b51558716025b9c32af16abcaa009421f835/fs/find-packages/src/index.ts
+ *
+ * @param root
+ * @param opts
+ * @returns
+ */
+export function findAllPackages(
+  root: string,
+  packageOpts: PackageOptions | string[],
+): string[] {
+  const cache = getPackagesCache(root);
+  if (cache) return cache;
+
+  const opts = normalizePackageGlobOptions(packageOpts, root);
+
+  const { patterns, includeRoot, ignore } = {
+    ...defaultPackagesOptions,
+    ...opts,
+  };
+
+  const normalizedPatterns = normalizePatterns(
+    patterns ?? defaultPackagesOptions.patterns,
+  );
+  if (includeRoot) {
+    normalizedPatterns.push(...normalizePatterns(["."]));
+  }
+
+  if (!normalizedPatterns.length) {
+    return [];
+  }
+
+  const paths = fastGlob.globSync(normalizedPatterns, {
+    cwd: root,
+    ignore,
+  });
+
+  const packagePaths = unique(
+    paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
+  );
+
+  setPackagesCache(root, packagePaths);
+
+  return packagePaths;
+}
+
+/**
  * Find the closest package from the source file.
  *
  * @param sourceFile {string} - the source file
@@ -233,50 +253,96 @@ export function findClosestPackageRoot(
 export function findClosestConfigFile(
   sourceFile: string,
   configFiles: string[],
+  tsconfigFilename?: string,
 ): string | undefined {
-  return sortPaths(configFiles).find((p) =>
-    sourceFile.startsWith(path.dirname(p)),
-  );
+  return configFiles
+    .sort((a, b) => {
+      const aDepth = getPathDepth(a);
+      const bDepth = getPathDepth(b);
+
+      if (aDepth !== bDepth) {
+        return bDepth - aDepth;
+      }
+
+      if (tsconfigFilename) {
+        if (a.endsWith(tsconfigFilename)) return -1;
+        if (b.endsWith(tsconfigFilename)) return 1;
+      }
+
+      return b.localeCompare(a);
+    })
+    .find((p) => sourceFile.startsWith(path.dirname(p)));
 }
 
-const configCache = new Map<string, string[]>();
-
-export function normalizeConfigFileOptions(
+export function getConfigFilename(
   config: boolean | string | ConfigFileOptions | undefined,
-  packageDir: string,
-  sourceFile: string,
-  defaultFilename = TSCONFIG_FILENAME,
-): ConfigFileOptions | undefined {
+  defaultFilename: string,
+): string | undefined {
   if (!config) return undefined;
 
-  if (typeof config === "object") {
-    return { ...defaultConfigFileOptions, ...config };
+  if (typeof config === "string") {
+    return path.basename(config);
   }
 
-  const filename =
-    typeof config === "string" ? path.basename(config) : defaultFilename;
+  if (typeof config === "object" && config?.configFile) {
+    return path.basename(config.configFile);
+  }
 
-  const cacheKey = `${packageDir}:${filename}`;
+  return defaultFilename;
+}
 
-  let configFiles: string[];
-  if (configCache.has(cacheKey)) {
-    configFiles = configCache.get(cacheKey)!;
-  } else {
-    const paths = fastGlob.globSync(`**/${filename}`, {
-      cwd: packageDir,
-      ignore: ["**/node_modules/**"],
-    });
+export function normalizeConfigFileOptions(
+  configs: Record<
+    "tsconfig" | "jsconfig",
+    boolean | string | ConfigFileOptions | undefined
+  >,
+  packageDir: string,
+  sourceFile: string,
+): ConfigFileOptions | undefined {
+  const { jsconfig, tsconfig } = configs;
+
+  if (!tsconfig && !jsconfig) return undefined;
+
+  for (const c of [tsconfig, jsconfig] as const) {
+    if (
+      typeof c === "object" &&
+      c.configFile &&
+      path.isAbsolute(c.configFile)
+    ) {
+      return { ...defaultConfigFileOptions, ...c };
+    }
+  }
+
+  const jsconfigFilename = getConfigFilename(jsconfig, JSCONFIG_FILENAME);
+  const tsconfigFilename = getConfigFilename(tsconfig, TSCONFIG_FILENAME);
+
+  let configFiles = getConfigFilesCache(packageDir);
+
+  if (!configFiles) {
+    const paths = fastGlob.globSync(
+      [tsconfigFilename, jsconfigFilename]
+        .filter(Boolean)
+        .map((f) => `**/${f}`),
+      {
+        cwd: packageDir,
+        ignore: ["**/node_modules/**"],
+      },
+    );
 
     configFiles = paths.map((p) => path.join(packageDir, p));
 
-    configCache.set(cacheKey, configFiles);
+    setConfigFilesCache(packageDir, configFiles);
   }
 
   if (!configFiles.length) {
     return undefined;
   }
 
-  const closestConfigPath = findClosestConfigFile(sourceFile, configFiles);
+  const closestConfigPath = findClosestConfigFile(
+    sourceFile,
+    configFiles,
+    tsconfigFilename,
+  );
 
   if (closestConfigPath) {
     return { ...defaultConfigFileOptions, configFile: closestConfigPath };
@@ -285,19 +351,13 @@ export function normalizeConfigFileOptions(
   return undefined;
 }
 
-const aliasCache = new Map<string, Record<string, string[]>>();
-
 export function normalizeAlias(
   alias: Record<string, string | string[]> | undefined,
   parent: string,
 ): Record<string, string[]> | undefined {
   if (!alias) return undefined;
 
-  if (aliasCache.has(parent)) {
-    return aliasCache.get(parent);
-  }
-
-  return Object.keys(alias).reduce(
+  const normalizedAlias = Object.keys(alias).reduce(
     (acc, key) => {
       const value = Array.isArray(alias[key]) ? alias[key] : [alias[key]];
 
@@ -312,6 +372,8 @@ export function normalizeAlias(
     },
     {} as Record<string, string[]>,
   );
+
+  return normalizedAlias;
 }
 
 /**
@@ -322,4 +384,22 @@ export function normalizeAlias(
  */
 export function hashObject(obj: unknown): string {
   return crypto.createHash("sha256").update(stableHash(obj)).digest("hex");
+}
+
+/**
+ * Find all workspace packages.
+ *
+ * @param roots {string[]} - the roots to search
+ * @param packages {string[] | PackageOptions} - the package options
+ * @returns {string[]} - the workspace packages
+ */
+export function findWorkspacePackages(
+  roots: string[],
+  packages?: string[] | PackageOptions,
+): string[] {
+  if (packages && typeof packages === "object") {
+    return roots.flatMap((r) => findAllPackages(r, packages));
+  }
+
+  return [...roots];
 }
