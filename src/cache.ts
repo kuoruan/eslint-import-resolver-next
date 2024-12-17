@@ -54,27 +54,30 @@ export function getRelativeResolver(
   return relativeResolver;
 }
 
-let resolver: ResolverFactory | null = null;
-let currentHashKey = "";
+const MAX_RESOLVER_CACHE_SIZE = 4;
+
+const resolverCache = new Map<string, ResolverFactory>();
 
 export function getResolver(
   hashKey: string,
   options: NapiResolveOptions,
 ): ResolverFactory {
-  if (currentHashKey === hashKey && resolver) {
-    return resolver;
+  if (resolverCache.has(hashKey)) {
+    return resolverCache.get(hashKey)!;
   }
 
-  if (resolver) {
-    const oldResolver = resolver;
+  if (resolverCache.size >= MAX_RESOLVER_CACHE_SIZE) {
+    const firstKey = resolverCache.keys().next().value!;
+
+    const oldResolver = resolverCache.get(firstKey)!;
     oldResolver.clearCache();
 
-    resolver = oldResolver.cloneWithOptions(options);
-  } else {
-    resolver = new ResolverFactory(options);
+    resolverCache.delete(firstKey);
   }
 
-  currentHashKey = hashKey;
+  const resolver = new ResolverFactory(options);
+
+  resolverCache.set(hashKey, resolver);
 
   return resolver;
 }
