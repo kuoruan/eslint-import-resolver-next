@@ -6,9 +6,9 @@
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "exports": {
+    "types": "./lib/index.d.ts",
     "import": "./lib/index.js",
-    "require": "./lib/index.cjs",
-    "types": "./lib/index.d.ts"
+    "require": "./lib/index.cjs"
   },
   "sideEffects": false,
   "description": "The next resolver for `eslint-plugin-import` or `eslint-plugin-import-x`",
