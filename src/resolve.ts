@@ -1,5 +1,5 @@
-import { builtinModules } from "module";
-import { cwd } from "process";
+import module from "node:module";
+import process from "node:process";
 
 import { defaultOptions } from "./constants";
 import { resolveModulePath, resolveRelativePath } from "./resolver";
@@ -20,7 +20,7 @@ export function resolve(
 ): ResolvedResult {
   const cleanedPath = cleanModulePath(modulePath);
 
-  if (builtinModules.includes(cleanedPath)) {
+  if (module.builtinModules.includes(cleanedPath)) {
     return { found: true, path: null };
   }
 
@@ -39,7 +39,7 @@ export function resolve(
     return resolveRelativePath(sourceFile, modulePath, restOptions);
   }
 
-  const resolveRoots = roots?.length ? roots : [cwd()];
+  const resolveRoots = roots?.length ? roots : [process.cwd()];
 
   const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
@@ -74,7 +74,7 @@ export function createNextImportResolver(config?: Options | null): NewResolver {
     ...config,
   };
 
-  const resolveRoots = roots?.length ? roots : [cwd()];
+  const resolveRoots = roots?.length ? roots : [process.cwd()];
 
   const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
@@ -84,7 +84,7 @@ export function createNextImportResolver(config?: Options | null): NewResolver {
     resolve: (modulePath: string, sourceFile: string) => {
       const cleanedPath = cleanModulePath(modulePath);
 
-      if (builtinModules.includes(cleanedPath)) {
+      if (module.builtinModules.includes(cleanedPath)) {
         return { found: true, path: null };
       }
 

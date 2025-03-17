@@ -1,5 +1,6 @@
+import path from "node:path";
+
 import { type NapiResolveOptions } from "oxc-resolver";
-import path from "path";
 
 import type { ResolvedResult } from "@/types";
 

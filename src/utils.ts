@@ -1,8 +1,9 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+
 import fastGlob from "fast-glob";
-import fs from "fs";
 import yaml from "js-yaml";
-import path from "path";
 import stableHash from "stable-hash";
 
 import {
