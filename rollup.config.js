@@ -1,6 +1,7 @@
 import typescript from "@rollup/plugin-typescript";
 import { defineConfig } from "rollup";
 import nodeExternals from "rollup-plugin-node-externals";
+import transformPaths from "typescript-transform-paths";
 
 export default defineConfig({
   input: "src/index.ts",
@@ -17,5 +18,17 @@ export default defineConfig({
       entryFileNames: "[name].js",
     },
   ],
-  plugins: [typescript(), nodeExternals()],
+  plugins: [
+    typescript({
+      transformers: {
+        afterDeclarations: [
+          {
+            type: "program",
+            factory: transformPaths.default ?? transformPaths,
+          },
+        ],
+      },
+    }),
+    nodeExternals(),
+  ],
 });
