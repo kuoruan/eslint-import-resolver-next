@@ -1,6 +1,6 @@
 import { createNextImportResolver, resolve } from "./resolve.js";
 import type {
-  NewResolver,
+  NextImportResolver,
   Options,
   PackageGlobOptions,
   PackageOptions,
@@ -8,7 +8,7 @@ import type {
 
 const interfaceVersion = 2;
 
-export type { NewResolver, Options, PackageGlobOptions, PackageOptions };
+export type { NextImportResolver, Options, PackageGlobOptions, PackageOptions };
 
 export { createNextImportResolver, interfaceVersion, resolve };
 

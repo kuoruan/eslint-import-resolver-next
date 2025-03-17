@@ -3,7 +3,7 @@ import process from "node:process";
 
 import { defaultOptions } from "./constants.js";
 import { resolveModulePath, resolveRelativePath } from "./resolver.js";
-import type { NewResolver, Options, ResolvedResult } from "./types.js";
+import type { NextImportResolver, Options, ResolvedResult } from "./types.js";
 import {
   cleanModulePath,
   findClosestPackageRoot,
@@ -68,7 +68,9 @@ export function resolve(
   });
 }
 
-export function createNextImportResolver(config?: Options | null): NewResolver {
+export function createNextImportResolver(
+  config?: Options | null,
+): NextImportResolver {
   const { roots, alias, packages, jsconfig, tsconfig, ...restOptions } = {
     ...defaultOptions,
     ...config,

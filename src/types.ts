@@ -73,8 +73,9 @@ export interface ResultFound {
 
 export type ResolvedResult = ResultNotFound | ResultFound;
 
-export interface NewResolver {
+export interface NextImportResolver {
   interfaceVersion: 3;
-  name?: string; // This will be included in the debug log
+  /** optional name for the resolver, this is used in logs/debug output */
+  name?: string;
   resolve: (modulePath: string, sourceFile: string) => ResolvedResult;
 }
