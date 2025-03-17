@@ -1,10 +1,10 @@
-import { createNextImportResolver, resolve } from "./resolve";
+import { createNextImportResolver, resolve } from "./resolve.js";
 import type {
   NewResolver,
   Options,
   PackageGlobOptions,
   PackageOptions,
-} from "./types";
+} from "./types.js";
 
 const interfaceVersion = 2;
 

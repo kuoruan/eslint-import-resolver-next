@@ -1,4 +1,4 @@
-import type { ConfigFileOptions, Options, PackageOptions } from "./types";
+import type { ConfigFileOptions, Options, PackageOptions } from "./types.js";
 
 export const defaultPackagesOptions = {
   patterns: ["."],

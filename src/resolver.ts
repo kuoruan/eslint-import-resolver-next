@@ -2,9 +2,9 @@ import path from "node:path";
 
 import { type NapiResolveOptions } from "oxc-resolver";
 
-import { getRelativeResolver, getResolver } from "./cache";
-import type { ResolvedResult } from "./types";
-import { hashObject } from "./utils";
+import { getRelativeResolver, getResolver } from "./cache.js";
+import type { ResolvedResult } from "./types.js";
+import { hashObject } from "./utils.js";
 
 /**
  * Resolves relative path imports

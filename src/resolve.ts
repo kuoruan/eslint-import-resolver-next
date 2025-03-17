@@ -1,9 +1,9 @@
 import module from "node:module";
 import process from "node:process";
 
-import { defaultOptions } from "./constants";
-import { resolveModulePath, resolveRelativePath } from "./resolver";
-import type { NewResolver, Options, ResolvedResult } from "./types";
+import { defaultOptions } from "./constants.js";
+import { resolveModulePath, resolveRelativePath } from "./resolver.js";
+import type { NewResolver, Options, ResolvedResult } from "./types.js";
 import {
   cleanModulePath,
   findClosestPackageRoot,
@@ -11,7 +11,7 @@ import {
   normalizeAlias,
   normalizeConfigFileOptions,
   unique,
-} from "./utils";
+} from "./utils.js";
 
 export function resolve(
   modulePath: string,

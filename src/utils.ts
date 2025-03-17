@@ -4,7 +4,7 @@ import path from "node:path";
 
 import fastGlob from "fast-glob";
 import yaml from "js-yaml";
-import stableHash from "stable-hash";
+import { stableHash } from "stable-hash";
 
 import {
   getConfigFilesCache,
@@ -13,19 +13,19 @@ import {
   setConfigFilesCache,
   setPackagesCache,
   setYamlCache,
-} from "./cache";
+} from "./cache.js";
 import {
   defaultConfigFileOptions,
   defaultPackagesOptions,
   JSCONFIG_FILENAME,
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
-} from "./constants";
+} from "./constants.js";
 import type {
   ConfigFileOptions,
   PackageGlobOptions,
   PackageOptions,
-} from "./types";
+} from "./types.js";
 
 /**
  * Remove duplicates from an array.
