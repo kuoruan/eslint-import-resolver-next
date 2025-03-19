@@ -68,19 +68,18 @@ export function cleanModulePath(modulePath: string) {
  * @returns the normalized patterns
  */
 export function normalizePatterns(patterns: string[]): string[] {
-  const normalizedPatterns: string[] = [];
-  for (const pattern of patterns) {
+  if (!patterns.length) return [];
+
+  return patterns.flatMap((pattern) => {
     const convertedPattern = pattern.replace(/\\/g, "/").replace(/\/$/, "");
 
-    // We should add separate pattern for each extension
     // for some reason, fast-glob is buggy with /package.{json,yaml,json5} pattern
-    normalizedPatterns.push(
-      convertedPattern + "/package.json",
-      convertedPattern + "/package.json5",
-      convertedPattern + "/package.yaml",
-    );
-  }
-  return normalizedPatterns;
+    return [
+      `${convertedPattern}/package.json`,
+      `${convertedPattern}/package.json5`,
+      `${convertedPattern}/package.yaml`,
+    ];
+  });
 }
 
 /**
@@ -101,7 +100,7 @@ export function getPathDepth(p: string): number {
  * @param paths - the paths to sort
  * @returns
  */
-export function sortPaths(paths: string[]): string[] {
+export function sortPathsByDepth(paths: string[]): string[] {
   return paths.sort((a, b) => {
     if (a === "/") return 1;
     if (b === "/") return -1;
@@ -181,13 +180,19 @@ export function normalizePackageGlobOptions(
       ? [...packagePatterns, ...patterns]
       : patterns;
 
-    packagePatterns = unique(mergedPatterns.filter(Boolean));
+    packagePatterns = mergedPatterns.filter(Boolean);
   }
 
-  return {
-    patterns: packagePatterns?.length ? packagePatterns : undefined,
-    ...restOptions,
-  };
+  packagePatterns = unique(packagePatterns ?? []);
+
+  if (packagePatterns.length) {
+    return {
+      patterns: packagePatterns,
+      ...restOptions,
+    };
+  }
+
+  return restOptions;
 }
 
 /**
@@ -212,21 +217,17 @@ export function findAllPackages(
     ...opts,
   };
 
-  const normalizedPatterns = normalizePatterns(
-    patterns ?? defaultPackagesOptions.patterns,
-  );
+  const searchPatterns = patterns ?? defaultPackagesOptions.patterns;
+
   if (includeRoot) {
-    normalizedPatterns.push(...normalizePatterns(["."]));
+    searchPatterns.push(".");
   }
 
-  if (!normalizedPatterns.length) {
-    return [];
-  }
+  const normalizedPatterns = normalizePatterns(searchPatterns);
 
-  const paths = fastGlob.globSync(normalizedPatterns, {
-    cwd: root,
-    ignore,
-  });
+  if (!normalizedPatterns.length) return [];
+
+  const paths = fastGlob.globSync(normalizedPatterns, { cwd: root, ignore });
 
   const packagePaths = unique(
     paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
@@ -248,7 +249,7 @@ export function findClosestPackageRoot(
   sourceFile: string,
   paths: string[],
 ): string | undefined {
-  return sortPaths(paths).find((p) => sourceFile.startsWith(p));
+  return sortPathsByDepth(paths).find((p) => sourceFile.startsWith(p));
 }
 
 export function findClosestConfigFile(

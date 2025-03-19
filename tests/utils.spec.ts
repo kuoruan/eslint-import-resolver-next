@@ -4,7 +4,7 @@ import {
   hashObject,
   normalizeAlias,
   normalizePatterns,
-  sortPaths,
+  sortPathsByDepth,
 } from "@/utils";
 
 describe("test normalize patterns", () => {
@@ -99,11 +99,11 @@ describe("test sort paths", () => {
   it("sort paths by depth", () => {
     if (process.platform === "win32") {
       const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\a", "C:\\"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["C:\\a\\b\\c", "C:\\a\\b", "C:\\a", "C:\\"]);
     } else {
       const paths = ["/a/b/c", "/a/b", "/a", "/"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["/a/b/c", "/a/b", "/a", "/"]);
     }
   });
@@ -111,11 +111,11 @@ describe("test sort paths", () => {
   it("sort paths with same depth reversed alphabetically", () => {
     if (process.platform === "win32") {
       const paths = ["C:\\a\\b", "C:\\a\\a", "C:\\a\\c"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["C:\\a\\c", "C:\\a\\b", "C:\\a\\a"]);
     } else {
       const paths = ["/a/b", "/a/a", "/a/c"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["/a/c", "/a/b", "/a/a"]);
     }
   });
@@ -123,11 +123,11 @@ describe("test sort paths", () => {
   it("sort paths with mixed depths and root", () => {
     if (process.platform === "win32") {
       const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\", "C:\\a"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["C:\\a\\b\\c", "C:\\a\\b", "C:\\a", "C:\\"]);
     } else {
       const paths = ["/a/b/c", "/a/b", "/", "/a"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["/a/b/c", "/a/b", "/a", "/"]);
     }
   });
@@ -135,7 +135,7 @@ describe("test sort paths", () => {
   it("sort paths with mixed depths and root and reversed alphabetically", () => {
     if (process.platform === "win32") {
       const paths = ["C:\\a\\b\\c", "C:\\a\\c", "C:\\a\\b", "C:\\a\\a", "C:\\"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual([
         "C:\\a\\b\\c",
         "C:\\a\\c",
@@ -145,7 +145,7 @@ describe("test sort paths", () => {
       ]);
     } else {
       const paths = ["/a/b/c", "/a/b", "/", "/a/a", "/a/c"];
-      const sortedPaths = sortPaths(paths);
+      const sortedPaths = sortPathsByDepth(paths);
       expect(sortedPaths).toEqual(["/a/b/c", "/a/c", "/a/b", "/a/a", "/"]);
     }
   });
