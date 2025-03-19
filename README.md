@@ -112,7 +112,7 @@ All other options are passed to the `oxc-resolver` package. See the [oxc-resolve
 A folder with a `package.json` file is considered a package. The `PackageOptions` object can have the following properties:
 
 - `patterns` (string[]): The patterns to search for packages. Default: `["."]`.
-- `ignore` (string[]): The directories to ignore. Default: `["**/node_modules/**", "**/test/**", "**/tests/**"]`.
+- `ignore` (string[]): The directories to ignore. Default: `["**/node_modules/**", "**/bower_components/**", "**/test/**", "**/tests/**"]`.
 - `includeRoot` (boolean): Weather to include the root directory. Default: `false`.
 - `pnpmWorkspace` (boolean | string): Weather to use the `pnpm-workspace.yaml` file to find packages. Default: `false`.
   * If `true`, the resolver will try to find the `pnpm-workspace.yaml` file in the package directory.

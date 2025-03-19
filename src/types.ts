@@ -9,7 +9,7 @@ export interface PackageGlobOptions {
   /**
    * Ignore patterns when searching for package.json files.
    *
-   * @default ["**\/node_modules/**", "**\/test/**", "**\/tests/**"]
+   * @default ["**\/node_modules/**", "**\/bower_components/**", "**\/test/**", "**\/tests/**"]
    */
   ignore?: string[];
   /**
