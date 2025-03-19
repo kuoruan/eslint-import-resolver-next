@@ -1,8 +1,15 @@
 import type { ConfigFileOptions, Options, PackageOptions } from "./types.js";
 
+export const NODE_MODULES_EXCLUDE = "**/node_modules/**";
+
 export const defaultPackagesOptions = {
   patterns: ["."],
-  ignore: ["**/node_modules/**", "**/test/**", "**/tests/**"],
+  ignore: [
+    NODE_MODULES_EXCLUDE,
+    "**/bower_components/**",
+    "**/test/**",
+    "**/tests/**",
+  ],
   includeRoot: false,
 } satisfies PackageOptions;
 

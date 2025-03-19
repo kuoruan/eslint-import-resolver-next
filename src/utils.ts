@@ -18,6 +18,7 @@ import {
   defaultConfigFileOptions,
   defaultPackagesOptions,
   JSCONFIG_FILENAME,
+  NODE_MODULES_EXCLUDE,
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants.js";
@@ -331,7 +332,7 @@ export function normalizeConfigFileOptions(
         .map((f) => `**/${f}`),
       {
         cwd: packageDir,
-        ignore: ["**/node_modules/**"],
+        ignore: [NODE_MODULES_EXCLUDE],
         expandDirectories: false,
       },
     );
