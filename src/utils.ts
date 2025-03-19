@@ -2,9 +2,9 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import fastGlob from "fast-glob";
 import yaml from "js-yaml";
 import { stableHash } from "stable-hash";
+import { globSync } from "tinyglobby";
 
 import {
   getConfigFilesCache,
@@ -197,7 +197,7 @@ export function normalizePackageGlobOptions(
 
 /**
  *
- * Copy from https://github.com/pnpm/pnpm/blob/19d5b51558716025b9c32af16abcaa009421f835/fs/find-packages/src/index.ts
+ * Copy from https://github.com/pnpm/pnpm/blob/b8b0c687f2e3403d07381822fe81c08478413916/fs/find-packages/src/index.ts
  *
  * @param root
  * @param opts
@@ -227,7 +227,11 @@ export function findAllPackages(
 
   if (!normalizedPatterns.length) return [];
 
-  const paths = fastGlob.globSync(normalizedPatterns, { cwd: root, ignore });
+  const paths = globSync(normalizedPatterns, {
+    cwd: root,
+    ignore,
+    expandDirectories: false,
+  });
 
   const packagePaths = unique(
     paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
@@ -321,13 +325,14 @@ export function normalizeConfigFileOptions(
   let configFiles = getConfigFilesCache(packageDir);
 
   if (!configFiles) {
-    const paths = fastGlob.globSync(
+    const paths = globSync(
       [tsconfigFilename, jsconfigFilename]
         .filter(Boolean)
         .map((f) => `**/${f}`),
       {
         cwd: packageDir,
         ignore: ["**/node_modules/**"],
+        expandDirectories: false,
       },
     );
 

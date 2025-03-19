@@ -35,10 +35,10 @@
     "prepublishOnly": "npm run test"
   },
   "dependencies": {
-    "fast-glob": "^3.3.3",
     "js-yaml": "^4.1.0",
-    "oxc-resolver": "^5.0.0",
-    "stable-hash": "^0.0.5"
+    "oxc-resolver": "^5.0.1",
+    "stable-hash": "^0.0.5",
+    "tinyglobby": "^0.2.12"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.26.10",
@@ -52,11 +52,11 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.0.0",
     "prettier": "^3.5.3",
-    "rollup": "^4.35.0",
+    "rollup": "^4.36.0",
     "rollup-plugin-node-externals": "^8.0.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
     "typescript-transform-paths": "^3.5.5",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.9"
   }
 }
