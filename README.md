@@ -112,9 +112,9 @@ All other options are passed to the `oxc-resolver` package. See the [oxc-resolve
 
 The `tsconfig` and `jsconfig` options can have the following properties:
 
-- `configFile` (string): The name of the file to search for or the absolute path to the file.
+- `configFile` (string): The name of the file to search for or the absolute path to the file. Default: `tsconfig.json`.
 - `ignore` (string[]): The directories to ignore. Default: `["**/node_modules/**"]`.
-- `references` ('auto' | string[]): Support for Typescript Project References.
+- `references` ('auto' | string[]): Support for Typescript Project References. Default: `'auto'`.
   * If `'auto'`, the resolver will try to find the `references` field in the `tsconfig.json` file.
   * If an array, the resolver will use the specified references.
 
