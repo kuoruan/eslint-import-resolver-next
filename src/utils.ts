@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import yaml from "js-yaml";
+import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash";
 import { globSync } from "tinyglobby";
 
@@ -30,8 +31,9 @@ import type {
 /**
  * Remove duplicates from an array.
  *
- * @param arr - the array to remove duplicates from
- * @returns
+ * @param {T[]} arr - the array to remove duplicates from
+ *
+ * @returns {T[]} the array without duplicates
  */
 export function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr));
@@ -43,29 +45,32 @@ export function unique<T>(arr: T[]): T[] {
  * Some imports may have querystrings, for example:
  *  * import "foo?bar";
  *
- * @param {string} modulePath the import module path
+ * @param {string} modulePath - the import module path
  *
- * @retures {string} cleaned source
+ * @returns {string} cleaned module path
  */
 export function cleanModulePath(modulePath: string) {
-  if (modulePath.startsWith("node:")) {
-    return modulePath.slice(5);
+  let cleanedPath = modulePath;
+
+  if (cleanedPath.startsWith("node:")) {
+    cleanedPath = modulePath.slice(5);
   }
 
-  const querystringIndex = modulePath.lastIndexOf("?");
+  const querystringIndex = cleanedPath.lastIndexOf("?");
 
   if (querystringIndex > -1) {
-    return modulePath.slice(0, querystringIndex);
+    return cleanedPath.slice(0, querystringIndex);
   }
 
-  return modulePath;
+  return cleanedPath;
 }
 
 /**
  * Normalize patterns to include all possible package descriptor files.
  *
- * @param patterns - the patterns to normalize
- * @returns the normalized patterns
+ * @param {string[]} patterns - the patterns to normalize
+ *
+ * @returns {string[]} the normalized patterns
  */
 export function normalizePatterns(patterns: string[]): string[] {
   if (!patterns.length) return [];
@@ -85,8 +90,9 @@ export function normalizePatterns(patterns: string[]): string[] {
 /**
  * Get the depth of a path.
  *
- * @param p {string} - the path
- * @returns {number} - the depth of the path
+ * @param {string} p - the path
+ *
+ * @returns {number} the depth of the path
  */
 export function getPathDepth(p: string): number {
   if (!p) return 0;
@@ -97,8 +103,9 @@ export function getPathDepth(p: string): number {
 /**
  * Sort paths by the depth of the path. The deeper the path, the higher the priority.
  *
- * @param paths - the paths to sort
- * @returns
+ * @param {string[]} paths - the paths to sort
+ *
+ * @returns {string[]} the sorted paths
  */
 export function sortPathsByDepth(paths: string[]): string[] {
   return paths.sort((a, b) => {
@@ -119,8 +126,9 @@ export function sortPathsByDepth(paths: string[]): string[] {
 /**
  * Read a yaml file.
  *
- * @param filePath {string} - the file path to read
- * @returns {T | null} - the parsed yaml file
+ * @param {string} filePath - the file path to read
+ *
+ * @returns {T | null} the parsed yaml file
  */
 export function readYamlFile<T>(filePath: string): T | null {
   const cache = getYamlCache(filePath);
@@ -133,6 +141,10 @@ export function readYamlFile<T>(filePath: string): T | null {
   let doc: T | null;
   try {
     doc = yaml.load(fs.readFileSync(filePath, "utf8")) as T;
+
+    if (doc === undefined) {
+      doc = null;
+    }
   } catch {
     doc = null;
   }
@@ -145,9 +157,10 @@ export function readYamlFile<T>(filePath: string): T | null {
 /**
  * Normalize package glob options.
  *
- * @param opts {PackageOptions | string[]} - the package options
- * @param root {string} - the root path
- * @returns {PackageGlobOptions} - the normalized package glob options
+ * @param {PackageOptions | string[]} opts - the package options
+ * @param {string} root - the root path
+ *
+ * @returns {PackageGlobOptions} the normalized package glob options
  */
 export function normalizePackageGlobOptions(
   opts: PackageOptions | string[],
@@ -157,7 +170,7 @@ export function normalizePackageGlobOptions(
     ? ({ patterns: opts } satisfies PackageOptions)
     : opts;
 
-  let packagePatterns: string[] | undefined;
+  let mergedPatterns: string[] = [];
 
   if (pnpmWorkspace) {
     const pnpmWorkspacePath = path.join(
@@ -171,37 +184,37 @@ export function normalizePackageGlobOptions(
       readYamlFile<Record<"packages", string[]>>(pnpmWorkspacePath);
 
     if (pnpmWorkspaceRes?.packages?.length) {
-      packagePatterns = pnpmWorkspaceRes.packages;
+      mergedPatterns.push(...pnpmWorkspaceRes.packages);
     }
   }
 
-  if (patterns?.length) {
-    const mergedPatterns = packagePatterns
-      ? [...packagePatterns, ...patterns]
-      : patterns;
-
-    packagePatterns = mergedPatterns.filter(Boolean);
+  if (patterns) {
+    // the patterns in the options have higher priority
+    mergedPatterns.push(...patterns);
   }
 
-  packagePatterns = unique(packagePatterns ?? []);
+  mergedPatterns = unique(mergedPatterns.filter(Boolean));
 
-  if (packagePatterns.length) {
+  if (mergedPatterns.length) {
     return {
-      patterns: packagePatterns,
+      patterns: mergedPatterns,
       ...restOptions,
     };
   }
 
-  return restOptions;
+  // return the original options if no patterns are found
+  return { patterns, ...restOptions };
 }
 
 /**
+ * Find all packages in the root path.
  *
  * Copy from https://github.com/pnpm/pnpm/blob/b8b0c687f2e3403d07381822fe81c08478413916/fs/find-packages/src/index.ts
  *
- * @param root
- * @param opts
- * @returns
+ * @param {string} root - the root path
+ * @param {PackageOptions | string[]} packageOpts - the package options
+ *
+ * @returns {string[]} the found package paths
  */
 export function findAllPackages(
   root: string,
@@ -245,9 +258,10 @@ export function findAllPackages(
 /**
  * Find the closest package from the source file.
  *
- * @param sourceFile {string} - the source file
- * @param sortedPaths {string[]} - the paths to search
- * @returns {string | undefined} - the closest package root
+ * @param {string} sourceFile - the source file
+ * @param {string[]} sortedPaths - the paths to search
+ *
+ * @returns {string | undefined} the closest package root
  */
 export function findClosestPackageRoot(
   sourceFile: string,
@@ -256,6 +270,14 @@ export function findClosestPackageRoot(
   return sortedPaths.find((p) => sourceFile.startsWith(p));
 }
 
+/**
+ * Sort config files by depth and specific filename.
+ *
+ * @param {string[]} configFiles - the config files to sort
+ * @param {string} tsconfigFilename - the TypeScript config filename
+ *
+ * @returns {string[]} the sorted config files
+ */
 export function sortConfigFiles(
   configFiles: string[],
   tsconfigFilename?: string,
@@ -278,6 +300,14 @@ export function sortConfigFiles(
   });
 }
 
+/**
+ * Find the closest config file from the source file.
+ *
+ * @param {string} sourceFile - the source file
+ * @param {string[]} sortedConfigFiles - the config files to search
+ *
+ * @returns {string | undefined} the closest config file
+ */
 export function findClosestConfigFile(
   sourceFile: string,
   sortedConfigFiles: string[],
@@ -285,11 +315,19 @@ export function findClosestConfigFile(
   return sortedConfigFiles.find((p) => sourceFile.startsWith(path.dirname(p)));
 }
 
+/**
+ * Get the config files in the specified directory.
+ *
+ * @param {boolean | string | ConfigFileOptions | undefined} config - the config option
+ * @param {string} root - the root path
+ * @param {{ ignore?: string[]; filename: string }} defaults - the default options
+ *
+ * @returns {[string | undefined, string[] | undefined]} the filename and config files
+ */
 export function getConfigFiles(
   config: boolean | string | ConfigFileOptions | undefined,
   root: string,
-  defaultIgnore: string[],
-  defaultFilename: string,
+  defaults: { ignore?: string[]; filename: string },
 ):
   | [filename: undefined, configFiles: undefined]
   | [filename: string, configFiles: string[]] {
@@ -297,10 +335,10 @@ export function getConfigFiles(
   if (!config) return [undefined, undefined];
 
   let filename: string;
-  let ignore: string[];
+  let ignore: string[] | undefined;
 
   if (typeof config === "object") {
-    ignore = config.ignore ?? defaultIgnore;
+    ignore = config.ignore ?? defaults.ignore;
 
     if (config.configFile) {
       if (path.isAbsolute(config.configFile)) {
@@ -310,15 +348,15 @@ export function getConfigFiles(
         filename = path.basename(config.configFile);
       }
     } else {
-      filename = defaultFilename;
+      filename = defaults.filename;
     }
   } else if (typeof config === "string") {
     filename = path.basename(config);
-    ignore = defaultIgnore;
+    ignore = defaults.ignore;
   } else {
     // if the config is set to true, use the default filename
-    filename = defaultFilename;
-    ignore = defaultIgnore;
+    filename = defaults.filename;
+    ignore = defaults.ignore;
   }
 
   const globPaths = globSync(`**/${filename}`, {
@@ -333,9 +371,10 @@ export function getConfigFiles(
 /**
  * Normalize the config file options.
  *
- * @param configs {Record<"tsconfig" | "jsconfig", boolean | string | ConfigFileOptions | undefined>} - the config file options
- * @param packageDir {string} - the directory of the package
- * @param sourceFile {string} - the source file
+ * @param {Record<"tsconfig" | "jsconfig", boolean | string | ConfigFileOptions | undefined>} configs - the config file options
+ * @param {string} packageDir - the directory of the package
+ * @param {string} sourceFile - the source file
+ *
  * @returns {ConfigFileOptions | undefined} the normalized config file options
  */
 export function normalizeConfigFileOptions(
@@ -345,7 +384,7 @@ export function normalizeConfigFileOptions(
   >,
   packageDir: string,
   sourceFile: string,
-): ConfigFileOptions | undefined {
+): TsconfigOptions | undefined {
   const { jsconfig, tsconfig } = configs;
 
   if (!tsconfig && !jsconfig) return undefined;
@@ -361,20 +400,17 @@ export function normalizeConfigFileOptions(
     const [tsconfigFilename, tsconfigFiles] = getConfigFiles(
       tsconfig,
       packageDir,
-      defaultIgnore,
-      TSCONFIG_FILENAME,
+      { ignore: defaultIgnore, filename: TSCONFIG_FILENAME },
     );
 
     if (tsconfigFiles) {
       globFiles.push(...tsconfigFiles);
     }
 
-    const [, jsconfigFiles] = getConfigFiles(
-      jsconfig,
-      packageDir,
-      defaultIgnore,
-      JSCONFIG_FILENAME,
-    );
+    const [, jsconfigFiles] = getConfigFiles(jsconfig, packageDir, {
+      ignore: defaultIgnore,
+      filename: JSCONFIG_FILENAME,
+    });
 
     if (jsconfigFiles) {
       globFiles.push(...jsconfigFiles);
@@ -402,6 +438,14 @@ export function normalizeConfigFileOptions(
   return undefined;
 }
 
+/**
+ * Normalize the alias mapping.
+ *
+ * @param {Record<string, string | string[]> | undefined} alias - the alias mapping
+ * @param {string} parent - the parent directory
+ *
+ * @returns {Record<string, string[]> | undefined} the normalized alias mapping
+ */
 export function normalizeAlias(
   alias: Record<string, string | string[]> | undefined,
   parent: string,
@@ -430,8 +474,9 @@ export function normalizeAlias(
 /**
  * Get the hash of an object.
  *
- * @param obj {unknown} - the object to hash
- * @returns - the hash of the object
+ * @param {unknown} obj - the object to hash
+ *
+ * @returns {string} the hash of the object
  */
 export function hashObject(obj: unknown): string {
   return crypto.createHash("sha256").update(stableHash(obj)).digest("hex");
@@ -440,9 +485,10 @@ export function hashObject(obj: unknown): string {
 /**
  * Find all workspace packages.
  *
- * @param roots {string[]} - the roots to search
- * @param packages {string[] | PackageOptions} - the package options
- * @returns {string[]} - the sorted workspace packages
+ * @param {string[]} roots - the roots to search
+ * @param {string[] | PackageOptions} packages - the package options
+ *
+ * @returns {string[]} the sorted workspace packages
  */
 export function findWorkspacePackages(
   roots: string[],
