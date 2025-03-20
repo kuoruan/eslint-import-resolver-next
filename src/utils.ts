@@ -18,7 +18,6 @@ import {
   defaultConfigFileOptions,
   defaultPackagesOptions,
   JSCONFIG_FILENAME,
-  NODE_MODULES_EXCLUDE,
   PNPM_WORKSPACE_FILENAME,
   TSCONFIG_FILENAME,
 } from "./constants.js";
@@ -247,57 +246,98 @@ export function findAllPackages(
  * Find the closest package from the source file.
  *
  * @param sourceFile {string} - the source file
- * @param paths {string[]} - the paths to search
+ * @param sortedPaths {string[]} - the paths to search
  * @returns {string | undefined} - the closest package root
  */
 export function findClosestPackageRoot(
   sourceFile: string,
-  paths: string[],
+  sortedPaths: string[],
 ): string | undefined {
-  return sortPathsByDepth(paths).find((p) => sourceFile.startsWith(p));
+  return sortedPaths.find((p) => sourceFile.startsWith(p));
+}
+
+export function sortConfigFiles(
+  configFiles: string[],
+  tsconfigFilename?: string,
+): string[] {
+  return configFiles.sort((a, b) => {
+    const aDepth = getPathDepth(a);
+    const bDepth = getPathDepth(b);
+
+    if (aDepth !== bDepth) {
+      return bDepth - aDepth;
+    }
+
+    // move tsconfig before jsconfig
+    if (tsconfigFilename) {
+      if (a.endsWith(tsconfigFilename)) return -1;
+      if (b.endsWith(tsconfigFilename)) return 1;
+    }
+
+    return b.localeCompare(a);
+  });
 }
 
 export function findClosestConfigFile(
   sourceFile: string,
-  configFiles: string[],
-  tsconfigFilename?: string,
+  sortedConfigFiles: string[],
 ): string | undefined {
-  return configFiles
-    .sort((a, b) => {
-      const aDepth = getPathDepth(a);
-      const bDepth = getPathDepth(b);
-
-      if (aDepth !== bDepth) {
-        return bDepth - aDepth;
-      }
-
-      if (tsconfigFilename) {
-        if (a.endsWith(tsconfigFilename)) return -1;
-        if (b.endsWith(tsconfigFilename)) return 1;
-      }
-
-      return b.localeCompare(a);
-    })
-    .find((p) => sourceFile.startsWith(path.dirname(p)));
+  return sortedConfigFiles.find((p) => sourceFile.startsWith(path.dirname(p)));
 }
 
-export function getConfigFilename(
+export function getConfigFiles(
   config: boolean | string | ConfigFileOptions | undefined,
+  root: string,
+  defaultIgnore: string[],
   defaultFilename: string,
-): string | undefined {
-  if (!config) return undefined;
+):
+  | [filename: undefined, configFiles: undefined]
+  | [filename: string, configFiles: string[]] {
+  // if the config is not set, return undefined
+  if (!config) return [undefined, undefined];
 
-  if (typeof config === "string") {
-    return path.basename(config);
+  let filename: string;
+  let ignore: string[];
+
+  if (typeof config === "object") {
+    ignore = config.ignore ?? defaultIgnore;
+
+    if (config.configFile) {
+      if (path.isAbsolute(config.configFile)) {
+        // if the config file is absolute, return the filename and the config file
+        return [path.basename(config.configFile), [config.configFile]];
+      } else {
+        filename = path.basename(config.configFile);
+      }
+    } else {
+      filename = defaultFilename;
+    }
+  } else if (typeof config === "string") {
+    filename = path.basename(config);
+    ignore = defaultIgnore;
+  } else {
+    // if the config is set to true, use the default filename
+    filename = defaultFilename;
+    ignore = defaultIgnore;
   }
 
-  if (typeof config === "object" && config?.configFile) {
-    return path.basename(config.configFile);
-  }
+  const globPaths = globSync(`**/${filename}`, {
+    cwd: root,
+    ignore,
+    expandDirectories: false,
+  });
 
-  return defaultFilename;
+  return [filename, globPaths.map((p) => path.join(root, p))];
 }
 
+/**
+ * Normalize the config file options.
+ *
+ * @param configs {Record<"tsconfig" | "jsconfig", boolean | string | ConfigFileOptions | undefined>} - the config file options
+ * @param packageDir {string} - the directory of the package
+ * @param sourceFile {string} - the source file
+ * @returns {ConfigFileOptions | undefined} the normalized config file options
+ */
 export function normalizeConfigFileOptions(
   configs: Record<
     "tsconfig" | "jsconfig",
@@ -310,34 +350,37 @@ export function normalizeConfigFileOptions(
 
   if (!tsconfig && !jsconfig) return undefined;
 
-  for (const c of [tsconfig, jsconfig] as const) {
-    if (
-      typeof c === "object" &&
-      c.configFile &&
-      path.isAbsolute(c.configFile)
-    ) {
-      return { ...defaultConfigFileOptions, ...c };
-    }
-  }
-
-  const jsconfigFilename = getConfigFilename(jsconfig, JSCONFIG_FILENAME);
-  const tsconfigFilename = getConfigFilename(tsconfig, TSCONFIG_FILENAME);
+  const { ignore: defaultIgnore, ...restDefaultOptions } =
+    defaultConfigFileOptions;
 
   let configFiles = getConfigFilesCache(packageDir);
 
   if (!configFiles) {
-    const paths = globSync(
-      [tsconfigFilename, jsconfigFilename]
-        .filter(Boolean)
-        .map((f) => `**/${f}`),
-      {
-        cwd: packageDir,
-        ignore: [NODE_MODULES_EXCLUDE],
-        expandDirectories: false,
-      },
+    const globFiles: string[] = [];
+
+    const [tsconfigFilename, tsconfigFiles] = getConfigFiles(
+      tsconfig,
+      packageDir,
+      defaultIgnore,
+      TSCONFIG_FILENAME,
     );
 
-    configFiles = paths.map((p) => path.join(packageDir, p));
+    if (tsconfigFiles) {
+      globFiles.push(...tsconfigFiles);
+    }
+
+    const [, jsconfigFiles] = getConfigFiles(
+      jsconfig,
+      packageDir,
+      defaultIgnore,
+      JSCONFIG_FILENAME,
+    );
+
+    if (jsconfigFiles) {
+      globFiles.push(...jsconfigFiles);
+    }
+
+    configFiles = sortConfigFiles(globFiles, tsconfigFilename);
 
     setConfigFilesCache(packageDir, configFiles);
   }
@@ -346,14 +389,14 @@ export function normalizeConfigFileOptions(
     return undefined;
   }
 
-  const closestConfigPath = findClosestConfigFile(
-    sourceFile,
-    configFiles,
-    tsconfigFilename,
-  );
+  if (configFiles.length === 1) {
+    return { ...restDefaultOptions, configFile: configFiles[0] };
+  }
+
+  const closestConfigPath = findClosestConfigFile(sourceFile, configFiles);
 
   if (closestConfigPath) {
-    return { ...defaultConfigFileOptions, configFile: closestConfigPath };
+    return { ...restDefaultOptions, configFile: closestConfigPath };
   }
 
   return undefined;
@@ -399,15 +442,17 @@ export function hashObject(obj: unknown): string {
  *
  * @param roots {string[]} - the roots to search
  * @param packages {string[] | PackageOptions} - the package options
- * @returns {string[]} - the workspace packages
+ * @returns {string[]} - the sorted workspace packages
  */
 export function findWorkspacePackages(
   roots: string[],
   packages?: string[] | PackageOptions,
 ): string[] {
   if (packages && typeof packages === "object") {
-    return roots.flatMap((r) => findAllPackages(r, packages));
+    const find = roots.flatMap((r) => findAllPackages(r, packages));
+
+    return sortPathsByDepth(unique(find));
   }
 
-  return [...roots];
+  return sortPathsByDepth([...roots]);
 }

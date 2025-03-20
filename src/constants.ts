@@ -1,17 +1,20 @@
 import type { ConfigFileOptions, Options, PackageOptions } from "./types.js";
 
-export const NODE_MODULES_EXCLUDE = "**/node_modules/**";
-
 export const defaultPackagesOptions = {
   patterns: ["."],
   ignore: [
-    NODE_MODULES_EXCLUDE,
+    "**/node_modules/**",
     "**/bower_components/**",
     "**/test/**",
     "**/tests/**",
   ],
   includeRoot: false,
 } satisfies PackageOptions;
+
+export const defaultConfigFileOptions = {
+  references: "auto",
+  ignore: ["**/node_modules/**"],
+} satisfies Partial<ConfigFileOptions>;
 
 /**
  * Copy from https://github.com/9romise/eslint-import-resolver-oxc/blob/main/src/normalizeOptions.ts
@@ -66,10 +69,6 @@ export const defaultOptions = {
   tsconfig: true,
   jsconfig: true,
 } satisfies Options;
-
-export const defaultConfigFileOptions = {
-  references: "auto",
-} satisfies Partial<ConfigFileOptions>;
 
 export const PNPM_WORKSPACE_FILENAME = "pnpm-workspace.yaml";
 

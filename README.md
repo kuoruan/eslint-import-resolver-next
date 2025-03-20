@@ -94,18 +94,29 @@ module.exports = {
 
 - `tsconfig` (boolean | string | object): Weather to use the `tsconfig.json` file. Default: `true`.
   * If `true`, the resolver will try to find the `tsconfig.json` file close to the source file.
-  * If a string, it's the name of the file to search for.
-  * If an object, see the `tsconfig` option in the `oxc-resolver` package.
+  * If a string, it's the name of the file to search for or the absolute path to the file.
+  * If an object, see `ConfigFileOptions`.
 
 - `jsconfig` (boolean | string | object): Weather to use the `jsconfig.json` file. Default: `true`.
   * If `true`, the resolver will try to find the `jsconfig.json` file close to the source file.
-  * If a string, it's the name of the file to search for.
+  * If a string, it's the name of the file to search for or the absolute path to the file.
+  * If an object, see `ConfigFileOptions`.
 
 - `packages` (string[] | PackageOptions): The patterns or options to search for packages. Default: `undefined`.
   * If an array, the resolver will search for packages in the specified patterns.
-  * If an object, see the `PackageOptions`.
+  * If an object, see `PackageOptions`.
 
 All other options are passed to the `oxc-resolver` package. See the [oxc-resolver documentation](https://github.com/oxc-project/oxc-resolver#options)
+
+### ConfigFileOptions
+
+The `tsconfig` and `jsconfig` options can have the following properties:
+
+- `configFile` (string): The name of the file to search for or the absolute path to the file.
+- `ignore` (string[]): The directories to ignore. Default: `["**/node_modules/**"]`.
+- `references` ('auto' | string[]): Support for Typescript Project References.
+  * If `'auto'`, the resolver will try to find the `references` field in the `tsconfig.json` file.
+  * If an array, the resolver will use the specified references.
 
 ### PackageOptions
 

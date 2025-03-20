@@ -27,7 +27,9 @@ export interface PackageOptions extends PackageGlobOptions {
   pnpmWorkspace?: boolean | string;
 }
 
-export type ConfigFileOptions = NapiResolveOptions["tsconfig"];
+export type ConfigFileOptions = NapiResolveOptions["tsconfig"] & {
+  ignore?: string[];
+};
 
 export interface Options
   extends Omit<NapiResolveOptions, "alias" | "tsconfig"> {
@@ -36,22 +38,23 @@ export interface Options
    */
   alias?: Record<string, string | string[]>;
   /**
-   * Auto find tsconfig.json
+   * The tsconfig.json options.
    *
-   * - `true` to auto find tsconfig.json
-   * - `false` to disable auto find tsconfig.json
-   * - `string` to specify the tsconfig.json relative path
-   * - `object` to specify the tsconfig.json options
+   * - `true` to auto find `tsconfig.json`
+   * - `false` to disable auto find `tsconfig.json`
+   * - `string` to specify the filename or the absolute path of `tsconfig.json` file
+   * - `object` to specify the `tsconfig.json` options
    */
   tsconfig?: boolean | string | ConfigFileOptions;
   /**
-   * Use jsconfig.json to resolve the paths.
+   * The jsconfig.json options.
    *
-   * - `true` to auto find jsconfig.json
-   * - `false` to disable auto find jsconfig.json
-   * - `string` to specify the jsconfig.json relative path
+   * - `true` to auto find `jsconfig.json`
+   * - `false` to disable auto find `jsconfig.json`
+   * - `string` to specify the filename or the absolute path of `jsconfig.json` file
+   * - `object` to specify the `jsconfig.json` options
    */
-  jsconfig?: boolean | string;
+  jsconfig?: boolean | string | ConfigFileOptions;
   /**
    * Mono-repo package patterns.
    *

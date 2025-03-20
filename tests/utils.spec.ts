@@ -155,12 +155,12 @@ describe("test findClosestPackageRoot", () => {
   it("find closest package root", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\a\\b", "C:\\a\\b\\c", "C:\\a"];
+      const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\a"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBe("C:\\a\\b\\c");
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
-      const paths = ["/a/b", "/a/b/c", "/a"];
+      const paths = ["/a/b/c", "/a/b", "/a"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBe("/a/b/c");
     }
@@ -169,12 +169,12 @@ describe("test findClosestPackageRoot", () => {
   it("find closest package root with root path", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\", "C:\\a\\b", "C:\\a\\b\\c"];
+      const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBe("C:\\a\\b\\c");
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
-      const paths = ["/", "/a/b", "/a/b/c"];
+      const paths = ["/a/b/c", "/a/b", "/"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBe("/a/b/c");
     }
@@ -197,12 +197,12 @@ describe("test findClosestPackageRoot", () => {
   it("find closest package root with multiple matches", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\a", "C:\\a\\b", "C:\\a\\b\\c", "C:\\a\\b\\c\\d"];
+      const paths = ["C:\\a\\b\\c\\d", "C:\\a\\b\\c", "C:\\a\\b", "C:\\a"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBe("C:\\a\\b\\c\\d");
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
-      const paths = ["/a", "/a/b", "/a/b/c", "/a/b/c/d"];
+      const paths = ["/a/b/c/d", "/a/b/c", "/a/b", "/a"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBe("/a/b/c/d");
     }
@@ -213,14 +213,14 @@ describe("test findClosestConfigFile", () => {
   it("find closest config file", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const configFiles = ["C:\\a\\b\\config.json", "C:\\a\\b\\c\\config.json"];
+      const configFiles = ["C:\\a\\b\\c\\config.json", "C:\\a\\b\\config.json"];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBe("C:\\a\\b\\c\\config.json");
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
       const configFiles = [
-        "/a/b/config.json",
         "/a/b/c/config.json",
+        "/a/b/config.json",
         "/a/config.json",
       ];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
@@ -231,12 +231,12 @@ describe("test findClosestConfigFile", () => {
   it("find closest config file with root path", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const configFiles = ["C:\\config.json", "C:\\a\\b\\config.json"];
+      const configFiles = ["C:\\a\\b\\config.json", "C:\\config.json"];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBe("C:\\a\\b\\config.json");
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
-      const configFiles = ["/config.json", "/a/b/config.json"];
+      const configFiles = ["/a/b/config.json", "/config.json"];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBe("/a/b/config.json");
     }
@@ -270,10 +270,10 @@ describe("test findClosestConfigFile", () => {
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
       const configFiles = [
-        "/a/config.json",
-        "/a/b/config.json",
-        "/a/b/c/config.json",
         "/a/b/c/d/config.json",
+        "/a/b/c/config.json",
+        "/a/b/config.json",
+        "/a/config.json",
       ];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBe("/a/b/c/d/config.json");
@@ -284,8 +284,8 @@ describe("test findClosestConfigFile", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
       const configFiles = [
-        "C:\\a\\config.yaml",
         "C:\\a\\b\\config.json",
+        "C:\\a\\config.yaml",
         "C:\\config.json5",
       ];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
@@ -293,8 +293,8 @@ describe("test findClosestConfigFile", () => {
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
       const configFiles = [
-        "/a/config.yaml",
         "/a/b/config.json",
+        "/a/config.yaml",
         "/config.json5",
       ];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
@@ -306,23 +306,15 @@ describe("test findClosestConfigFile", () => {
     if (process.platform === "win32") {
       const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
       const configFiles = [
-        "C:\\a\\b\\c\\jsconfig.json",
         "C:\\a\\b\\c\\tsconfig.json",
+        "C:\\a\\b\\c\\jsconfig.json",
       ];
-      const closestConfig = findClosestConfigFile(
-        sourceFile,
-        configFiles,
-        "tsconfig.json",
-      );
+      const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBe("C:\\a\\b\\c\\tsconfig.json");
     } else {
       const sourceFile = "/a/b/c/d/file.ts";
-      const configFiles = ["/a/b/c/jsconfig.json", "/a/b/c/tsconfig.json"];
-      const closestConfig = findClosestConfigFile(
-        sourceFile,
-        configFiles,
-        "tsconfig.json",
-      );
+      const configFiles = ["/a/b/c/tsconfig.json", "/a/b/c/jsconfig.json"];
+      const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBe("/a/b/c/tsconfig.json");
     }
   });
