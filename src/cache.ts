@@ -1,8 +1,13 @@
-import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
+/**
+ * Whether to disable the cache or not.
+ */
+const isCacheDisabled = () => !!process.env.NEXT_RESOLVER_CACHE_DISABLED;
 
 const pathToPackagesCache = new Map<string, string[]>();
 
 export function getPackagesCache(root: string): string[] | null {
+  if (isCacheDisabled()) return null;
+
   if (pathToPackagesCache.has(root)) {
     return pathToPackagesCache.get(root)!;
   }
@@ -11,12 +16,22 @@ export function getPackagesCache(root: string): string[] | null {
 }
 
 export function setPackagesCache(root: string, packagePaths: string[]): void {
+  if (isCacheDisabled()) return;
+
   pathToPackagesCache.set(root, packagePaths);
+}
+
+export function clearPackagesCache(): void {
+  if (isCacheDisabled()) return;
+
+  pathToPackagesCache.clear();
 }
 
 const configFilesCache = new Map<string, string[]>();
 
 export function getConfigFilesCache(root: string): string[] | null {
+  if (isCacheDisabled()) return null;
+
   if (configFilesCache.has(root)) {
     return configFilesCache.get(root)!;
   }
@@ -25,12 +40,22 @@ export function getConfigFilesCache(root: string): string[] | null {
 }
 
 export function setConfigFilesCache(root: string, configFiles: string[]): void {
+  if (isCacheDisabled()) return;
+
   configFilesCache.set(root, configFiles);
+}
+
+export function clearConfigFilesCache(): void {
+  if (isCacheDisabled()) return;
+
+  configFilesCache.clear();
 }
 
 const yamlCache = new Map<string, unknown>();
 
 export function getYamlCache(root: string): unknown {
+  if (isCacheDisabled()) return null;
+
   if (yamlCache.has(root)) {
     return yamlCache.get(root)!;
   }
@@ -39,45 +64,13 @@ export function getYamlCache(root: string): unknown {
 }
 
 export function setYamlCache(root: string, yaml: unknown): void {
+  if (isCacheDisabled()) return;
+
   yamlCache.set(root, yaml);
 }
 
-let relativeResolver: ResolverFactory | null = null;
+export function clearYamlCache(): void {
+  if (isCacheDisabled()) return;
 
-export function getRelativeResolver(
-  options: NapiResolveOptions,
-): ResolverFactory {
-  if (!relativeResolver) {
-    relativeResolver = new ResolverFactory(options);
-  }
-
-  return relativeResolver;
-}
-
-const MAX_RESOLVER_CACHE_SIZE = 4;
-
-const resolverCache = new Map<string, ResolverFactory>();
-
-export function getResolver(
-  hashKey: string,
-  options: NapiResolveOptions,
-): ResolverFactory {
-  if (resolverCache.has(hashKey)) {
-    return resolverCache.get(hashKey)!;
-  }
-
-  if (resolverCache.size >= MAX_RESOLVER_CACHE_SIZE) {
-    const firstKey = resolverCache.keys().next().value!;
-
-    const oldResolver = resolverCache.get(firstKey)!;
-    oldResolver.clearCache();
-
-    resolverCache.delete(firstKey);
-  }
-
-  const resolver = new ResolverFactory(options);
-
-  resolverCache.set(hashKey, resolver);
-
-  return resolver;
+  yamlCache.clear();
 }

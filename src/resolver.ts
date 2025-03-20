@@ -1,10 +1,65 @@
 import path from "node:path";
 
-import { type NapiResolveOptions } from "oxc-resolver";
+import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
 
-import { getRelativeResolver, getResolver } from "./cache.js";
 import type { ResolvedResult } from "./types.js";
 import { hashObject } from "./utils.js";
+
+let relativeResolver: ResolverFactory | null = null;
+
+export function getRelativeResolver(
+  options: NapiResolveOptions,
+): ResolverFactory {
+  if (!relativeResolver) {
+    relativeResolver = new ResolverFactory(options);
+  }
+
+  return relativeResolver;
+}
+
+export function resetRelativeResolver(): void {
+  if (relativeResolver) {
+    relativeResolver.clearCache();
+  }
+
+  relativeResolver = null;
+}
+
+const MAX_RESOLVER_CACHE_SIZE = 4;
+
+const resolverMap = new Map<string, ResolverFactory>();
+
+export function getResolver(
+  hashKey: string,
+  options: NapiResolveOptions,
+): ResolverFactory {
+  if (resolverMap.has(hashKey)) {
+    return resolverMap.get(hashKey)!;
+  }
+
+  if (resolverMap.size >= MAX_RESOLVER_CACHE_SIZE) {
+    const firstKey = resolverMap.keys().next().value!;
+
+    const oldResolver = resolverMap.get(firstKey)!;
+    oldResolver.clearCache();
+
+    resolverMap.delete(firstKey);
+  }
+
+  const resolver = new ResolverFactory(options);
+
+  resolverMap.set(hashKey, resolver);
+
+  return resolver;
+}
+
+export function resetResolvers(): void {
+  for (const resolver of resolverMap.values()) {
+    resolver.clearCache();
+  }
+
+  resolverMap.clear();
+}
 
 /**
  * Resolves relative path imports
