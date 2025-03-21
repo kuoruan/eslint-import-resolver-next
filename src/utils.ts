@@ -95,7 +95,12 @@ export function normalizePatterns(patterns: string[]): string[] {
  * @returns {number} the depth of the path
  */
 export function getPathDepth(p: string): number {
-  if (!p) return 0;
+  if (!p || p === path.sep) return 0;
+
+  // if the path is windows absolute path, we need to remove the drive letter
+  if (path.isAbsolute(p) && /^[a-zA-Z]:[/\\]/.test(p)) {
+    p = p.slice(2);
+  }
 
   return p.split(path.sep).filter(Boolean).length;
 }
