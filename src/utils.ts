@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -484,7 +483,7 @@ export function normalizeAlias(
  * @returns {string} the hash of the object
  */
 export function hashObject(obj: unknown): string {
-  return crypto.createHash("sha256").update(stableHash(obj)).digest("hex");
+  return stableHash(obj);
 }
 
 /**
