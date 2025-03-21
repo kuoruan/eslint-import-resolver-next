@@ -1,3 +1,5 @@
+import process from "node:process";
+
 /**
  * Whether to disable the cache or not.
  */
