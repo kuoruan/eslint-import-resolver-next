@@ -79,6 +79,8 @@ export const defaultOptions = {
 
   tsconfig: true,
   jsconfig: true,
+
+  bun: false,
 } satisfies Options;
 
 export const PNPM_WORKSPACE_FILENAME = "pnpm-workspace.yaml";

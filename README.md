@@ -106,6 +106,9 @@ module.exports = {
   * If an array, the resolver will search for packages in the specified patterns.
   * If an object, see `PackageOptions`.
 
+- `bun` (boolean): Weather to enable the `bun` support. Default: `false`.
+  * If `true`, the resolver will try to resolve bun built-in modules.
+
 All other options are passed to the `unrs-resolver` package. See the [unrs-resolver documentation](https://github.com/unrs/unrs-resolver#options)
 
 ### ConfigFileOptions
