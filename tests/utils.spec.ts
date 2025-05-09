@@ -2,7 +2,6 @@ import mock from "mock-fs";
 
 import { defaultConfigFileOptions } from "@/constants";
 import {
-  cleanModulePath,
   findAllPackages,
   findClosestConfigFile,
   findClosestPackageRoot,
@@ -15,6 +14,7 @@ import {
   normalizePackageGlobOptions,
   normalizePatterns,
   readYamlFile,
+  removeQueryString,
   sortConfigFiles,
   sortPathsByDepth,
   unique,
@@ -55,24 +55,34 @@ describe.runIf(process.platform !== "win32")("utils", () => {
     });
   });
 
-  describe("test cleanModulePath", () => {
-    it("removes node: prefix", () => {
-      expect(cleanModulePath("node:fs")).toBe("fs");
-      expect(cleanModulePath("node:path")).toBe("path");
+  describe("test removeQueryString", () => {
+    it("removes query string from path", () => {
+      expect(removeQueryString("module?query")).toBe("module");
+      expect(removeQueryString("module?query=value")).toBe("module");
     });
 
-    it("removes querystring", () => {
-      expect(cleanModulePath("foo?bar")).toBe("foo");
-      expect(cleanModulePath("foo?bar=baz")).toBe("foo");
+    it("handles path with no query string", () => {
+      const modulePath = "module";
+      const result = removeQueryString(modulePath);
+      expect(result).toBe("module");
     });
 
-    it("removes both node: prefix and querystring", () => {
-      expect(cleanModulePath("node:fs?bar")).toBe("fs");
+    it("handles path with multiple question marks", () => {
+      const modulePath = "module?query=value?more=params";
+      const result = removeQueryString(modulePath);
+      expect(result).toBe("module");
     });
 
-    it("returns original path if no modifications needed", () => {
-      expect(cleanModulePath("foo")).toBe("foo");
-      expect(cleanModulePath("bar/baz")).toBe("bar/baz");
+    it("handles empty path", () => {
+      const modulePath = "";
+      const result = removeQueryString(modulePath);
+      expect(result).toBe("");
+    });
+
+    it("handles path with query string containing special characters", () => {
+      const modulePath = "module?query=value&param=123#hash";
+      const result = removeQueryString(modulePath);
+      expect(result).toBe("module");
     });
   });
 

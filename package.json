@@ -36,6 +36,7 @@
     "prepublishOnly": "npm run test"
   },
   "dependencies": {
+    "is-bun-module": "^2.0.0",
     "js-yaml": "^4.1.0",
     "stable-hash": "^0.0.5",
     "tinyglobby": "^0.2.13",
