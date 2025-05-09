@@ -8,7 +8,7 @@ The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/pack
 
 ## Features
 
-- Resolves modules using the `oxc-resolver` package.
+- Resolves modules using the [`unrs-resolver`](https://github.com/unrs/unrs-resolver) package.
 - Support mono-repos and `pnpm-workspaces.yaml`.
 - Support paths alias defined in `tsconfig.compilerOptions.paths` or `jsconfig.compilerOptions.paths`.
 
