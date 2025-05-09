@@ -19,48 +19,48 @@ import {
 
 process.env.NEXT_RESOLVER_CACHE_DISABLED = "1";
 
-describe.runIf(process.platform === "win32")("utils (Windows)", () => {
+describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
   describe("test normalize patterns", () => {
-    it("normalize patterns on Windows", () => {
-      const result1 = normalizePatterns(["C:\\path\\to\\pattern"]);
-      const result2 = normalizePatterns(["C:\\", "C:\\path\\to\\"]);
-      const result3 = normalizePatterns(["C:/path/to/pattern"]);
-      const result4 = normalizePatterns(["C:\\path\\*", "C:\\to\\**"]);
-      const result5 = normalizePatterns(["C:\\path\\*\\", "C:\\to\\**\\"]);
+    it("normalize patterns", () => {
+      const result1 = normalizePatterns(["/path/to/pattern"]);
+      const result2 = normalizePatterns(["/", "/path/to/"]);
+      const result3 = normalizePatterns(["\\path\\to\\pattern"]);
+      const result4 = normalizePatterns(["/path/*", "/to/**"]);
+      const result5 = normalizePatterns(["/path/*/", "/to/**/"]);
 
       expect(result1).toEqual([
-        "C:/path/to/pattern/package.json",
-        "C:/path/to/pattern/package.json5",
-        "C:/path/to/pattern/package.yaml",
+        "/path/to/pattern/package.json",
+        "/path/to/pattern/package.json5",
+        "/path/to/pattern/package.yaml",
       ]);
       expect(result2).toEqual([
-        "C:/package.json",
-        "C:/package.json5",
-        "C:/package.yaml",
-        "C:/path/to/package.json",
-        "C:/path/to/package.json5",
-        "C:/path/to/package.yaml",
+        "/package.json",
+        "/package.json5",
+        "/package.yaml",
+        "/path/to/package.json",
+        "/path/to/package.json5",
+        "/path/to/package.yaml",
       ]);
       expect(result3).toEqual([
-        "C:/path/to/pattern/package.json",
-        "C:/path/to/pattern/package.json5",
-        "C:/path/to/pattern/package.yaml",
+        "/path/to/pattern/package.json",
+        "/path/to/pattern/package.json5",
+        "/path/to/pattern/package.yaml",
       ]);
       expect(result4).toEqual([
-        "C:/path/*/package.json",
-        "C:/path/*/package.json5",
-        "C:/path/*/package.yaml",
-        "C:/to/**/package.json",
-        "C:/to/**/package.json5",
-        "C:/to/**/package.yaml",
+        "/path/*/package.json",
+        "/path/*/package.json5",
+        "/path/*/package.yaml",
+        "/to/**/package.json",
+        "/to/**/package.json5",
+        "/to/**/package.yaml",
       ]);
       expect(result5).toEqual([
-        "C:/path/*/package.json",
-        "C:/path/*/package.json5",
-        "C:/path/*/package.yaml",
-        "C:/to/**/package.json",
-        "C:/to/**/package.json5",
-        "C:/to/**/package.yaml",
+        "/path/*/package.json",
+        "/path/*/package.json5",
+        "/path/*/package.yaml",
+        "/to/**/package.json",
+        "/to/**/package.json5",
+        "/to/**/package.yaml",
       ]);
     });
   });
@@ -71,54 +71,47 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
     });
 
     it("returns correct depth for absolute paths", () => {
-      expect(getPathDepth("\\")).toBe(0);
-      expect(getPathDepth("C:\\")).toBe(0);
-      expect(getPathDepth("C:\\foo")).toBe(1);
-      expect(getPathDepth("C:\\foo\\bar")).toBe(2);
-      expect(getPathDepth("C:\\foo\\bar\\baz")).toBe(3);
+      expect(getPathDepth("/")).toBe(0);
+      expect(getPathDepth("/foo")).toBe(1);
+      expect(getPathDepth("/foo/bar")).toBe(2);
+      expect(getPathDepth("/foo/bar/baz")).toBe(3);
     });
 
     it("returns correct depth for relative paths", () => {
       expect(getPathDepth("foo")).toBe(1);
-      expect(getPathDepth("foo\\bar")).toBe(2);
-      expect(getPathDepth("foo\\bar\\baz")).toBe(3);
+      expect(getPathDepth("foo/bar")).toBe(2);
+      expect(getPathDepth("foo/bar/baz")).toBe(3);
     });
 
     it("handles consecutive separators", () => {
-      expect(getPathDepth("C:\\\\foo\\\\bar")).toBe(2);
-      expect(getPathDepth("foo\\\\bar\\\\baz")).toBe(3);
+      expect(getPathDepth("//foo//bar")).toBe(2);
+      expect(getPathDepth("foo//bar//baz")).toBe(3);
     });
   });
 
   describe("test sort paths", () => {
     it("sort paths by depth", () => {
-      const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\a", "C:\\"];
+      const paths = ["/a/b/c", "/a/b", "/a", "/"];
       const sortedPaths = sortPathsByDepth(paths);
-      expect(sortedPaths).toEqual(["C:\\a\\b\\c", "C:\\a\\b", "C:\\a", "C:\\"]);
+      expect(sortedPaths).toEqual(["/a/b/c", "/a/b", "/a", "/"]);
     });
 
     it("sort paths with same depth reversed alphabetically", () => {
-      const paths = ["C:\\a\\b", "C:\\a\\a", "C:\\a\\c"];
+      const paths = ["/a/b", "/a/a", "/a/c"];
       const sortedPaths = sortPathsByDepth(paths);
-      expect(sortedPaths).toEqual(["C:\\a\\c", "C:\\a\\b", "C:\\a\\a"]);
+      expect(sortedPaths).toEqual(["/a/c", "/a/b", "/a/a"]);
     });
 
     it("sort paths with mixed depths and root", () => {
-      const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\", "C:\\a"];
+      const paths = ["/a/b/c", "/a/b", "/", "/a"];
       const sortedPaths = sortPathsByDepth(paths);
-      expect(sortedPaths).toEqual(["C:\\a\\b\\c", "C:\\a\\b", "C:\\a", "C:\\"]);
+      expect(sortedPaths).toEqual(["/a/b/c", "/a/b", "/a", "/"]);
     });
 
     it("sort paths with mixed depths and root and reversed alphabetically", () => {
-      const paths = ["C:\\a\\b\\c", "C:\\a\\c", "C:\\a\\b", "C:\\a\\a", "C:\\"];
+      const paths = ["/a/b/c", "/a/b", "/", "/a/a", "/a/c"];
       const sortedPaths = sortPathsByDepth(paths);
-      expect(sortedPaths).toEqual([
-        "C:\\a\\b\\c",
-        "C:\\a\\c",
-        "C:\\a\\b",
-        "C:\\a\\a",
-        "C:\\",
-      ]);
+      expect(sortedPaths).toEqual(["/a/b/c", "/a/c", "/a/b", "/a/a", "/"]);
     });
   });
 
@@ -129,15 +122,15 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("read yaml file", () => {
       mock({
-        "C:\\path\\to\\file.yaml": "key: value",
+        "/path/to/file.yaml": "key: value",
       });
 
-      const data = readYamlFile("C:\\path\\to\\file.yaml");
+      const data = readYamlFile("/path/to/file.yaml");
       expect(data).toEqual({ key: "value" });
     });
 
     it("returns null for non-existent file", () => {
-      const data = readYamlFile("C:\\non\\existent\\file.yaml");
+      const data = readYamlFile("/non/existent/file.yaml");
       expect(data).toBeNull();
     });
 
@@ -145,20 +138,20 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       process.env.NEXT_RESOLVER_CACHE_DISABLED = "";
 
       mock({
-        "C:\\path\\to\\file1.yaml": "key: cached-value",
+        "/path/to/file1.yaml": "key: cached-value",
       });
 
       // First read to populate cache
-      const firstRead = readYamlFile("C:\\path\\to\\file1.yaml");
+      const firstRead = readYamlFile("/path/to/file1.yaml");
       expect(firstRead).toEqual({ key: "cached-value" });
 
       // Change file content
       mock({
-        "C:\\path\\to\\file1.yaml": "key: new-value",
+        "/path/to/file1.yaml": "key: new-value",
       });
 
       // Second read should return cached value
-      const secondRead = readYamlFile("C:\\path\\to\\file1.yaml");
+      const secondRead = readYamlFile("/path/to/file1.yaml");
       expect(secondRead).toEqual({ key: "cached-value" });
 
       process.env.NEXT_RESOLVER_CACHE_DISABLED = "1";
@@ -166,7 +159,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("read complex yaml file", () => {
       mock({
-        "C:\\path\\to\\file2.yaml": `
+        "/path/to/file2.yaml": `
         key1: value1
         key2:
           - item1
@@ -177,7 +170,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       `,
       });
 
-      const data = readYamlFile("C:\\path\\to\\file2.yaml");
+      const data = readYamlFile("/path/to/file2.yaml");
       expect(data).toEqual({
         key1: "value1",
         key2: ["item1", "item2"],
@@ -190,14 +183,14 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("read pnpm workspace yaml file", () => {
       mock({
-        "C:\\path\\to\\file3.yaml": `
+        "/path/to/file3.yaml": `
           packages:
             - package1
             - package2
         `,
       });
 
-      const data = readYamlFile("C:\\path\\to\\file3.yaml");
+      const data = readYamlFile("/path/to/file3.yaml");
       expect(data).toEqual({
         packages: ["package1", "package2"],
       });
@@ -205,107 +198,120 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("read yaml file with empty content", () => {
       mock({
-        "C:\\path\\to\\file4.yaml": "",
+        "/path/to/file4.yaml": "",
       });
 
-      const data = readYamlFile("C:\\path\\to\\file4.yaml");
+      const data = readYamlFile("/path/to/file4.yaml");
       expect(data).toEqual(null);
     });
 
     it("read invalid yaml file", () => {
       mock({
-        "C:\\path\\to\\file5.yaml": "key: value\nkey2",
+        "/path/to/file5.yaml": "key: value\nkey2",
       });
 
-      expect(readYamlFile("C:\\path\\to\\file5.yaml")).toEqual(null);
+      expect(readYamlFile("/path/to/file5.yaml")).toEqual(null);
     });
   });
 
   describe("test findClosestPackageRoot", () => {
     it("find closest package root", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\a"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const paths = ["/a/b/c", "/a/b", "/a"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
-      expect(closestRoot).toBe("C:\\a\\b\\c");
+      expect(closestRoot).toBe("/a/b/c");
     });
 
     it("find closest package root with root path", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\a\\b\\c", "C:\\a\\b", "C:\\"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const paths = ["/a/b/c", "/a/b", "/"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
-      expect(closestRoot).toBe("C:\\a\\b\\c");
+      expect(closestRoot).toBe("/a/b/c");
     });
 
     it("find closest package root with no match", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\x\\y", "C:\\z"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const paths = ["/x/y", "/z"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
       expect(closestRoot).toBeUndefined();
     });
 
     it("find closest package root with multiple matches", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const paths = ["C:\\a\\b\\c\\d", "C:\\a\\b\\c", "C:\\a\\b", "C:\\a"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const paths = ["/a/b/c/d", "/a/b/c", "/a/b", "/a"];
       const closestRoot = findClosestPackageRoot(sourceFile, paths);
-      expect(closestRoot).toBe("C:\\a\\b\\c\\d");
+      expect(closestRoot).toBe("/a/b/c/d");
     });
   });
 
   describe("test findClosestConfigFile", () => {
     it("find closest config file", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const configFiles = ["C:\\a\\b\\c\\config.json", "C:\\a\\b\\config.json"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const configFiles = [
+        "/a/b/c/config.json",
+        "/a/b/config.json",
+        "/a/config.json",
+      ];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
-      expect(closestConfig).toBe("C:\\a\\b\\c\\config.json");
+      expect(closestConfig).toBe("/a/b/c/config.json");
     });
 
     it("find closest config file with root path", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const configFiles = ["C:\\a\\b\\config.json", "C:\\config.json"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const configFiles = ["/a/b/config.json", "/config.json"];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
-      expect(closestConfig).toBe("C:\\a\\b\\config.json");
+      expect(closestConfig).toBe("/a/b/config.json");
     });
 
     it("find closest config file with no match", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const configFiles = ["C:\\x\\y\\config.json", "C:\\z\\config.json"];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const configFiles = ["/x/y/config.json", "/z/config.json"];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
       expect(closestConfig).toBeUndefined();
     });
 
     it("find closest config file with multiple matches", () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
+      const sourceFile = "/a/b/c/d/file.ts";
       const configFiles = [
-        "C:\\a\\b\\c\\d\\config.json",
-        "C:\\a\\b\\c\\config.json",
-        "C:\\a\\b\\config.json",
-        "C:\\a\\config.json",
+        "/a/b/c/d/config.json",
+        "/a/b/c/config.json",
+        "/a/b/config.json",
+        "/a/config.json",
       ];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
-      expect(closestConfig).toBe("C:\\a\\b\\c\\d\\config.json");
+      expect(closestConfig).toBe("/a/b/c/d/config.json");
+    });
+
+    it("find closest config file with different extensions", () => {
+      const sourceFile = "/a/b/c/d/file.ts";
+      const configFiles = [
+        "/a/b/config.json",
+        "/a/config.yaml",
+        "/config.json5",
+      ];
+      const closestConfig = findClosestConfigFile(sourceFile, configFiles);
+      expect(closestConfig).toBe("/a/b/config.json");
     });
 
     it('find closest config file with "tsconfig" filename', () => {
-      const sourceFile = "C:\\a\\b\\c\\d\\file.ts";
-      const configFiles = [
-        "C:\\a\\b\\c\\tsconfig.json",
-        "C:\\a\\b\\c\\jsconfig.json",
-      ];
+      const sourceFile = "/a/b/c/d/file.ts";
+      const configFiles = ["/a/b/c/tsconfig.json", "/a/b/c/jsconfig.json"];
       const closestConfig = findClosestConfigFile(sourceFile, configFiles);
-      expect(closestConfig).toBe("C:\\a\\b\\c\\tsconfig.json");
+      expect(closestConfig).toBe("/a/b/c/tsconfig.json");
     });
   });
 
   describe("test normalize alias", () => {
     it("normalize alias with absolute paths", () => {
       const alias = {
-        "@components": "D:\\src\\components",
-        "@utils": "D:\\src\\utils",
+        "@components": "/src/components",
+        "@utils": "/src/utils",
       };
-      const normalizedAlias = normalizeAlias(alias, "C:\\");
+
+      const normalizedAlias = normalizeAlias(alias, "/");
       expect(normalizedAlias).toEqual({
-        "@components": ["D:\\src\\components"],
-        "@utils": ["D:\\src\\utils"],
+        "@components": ["/src/components"],
+        "@utils": ["/src/utils"],
       });
     });
 
@@ -314,10 +320,10 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         "@components": "src/components",
         "@utils": "src/utils",
       };
-      const normalizedAlias = normalizeAlias(alias, "D:\\project");
+      const normalizedAlias = normalizeAlias(alias, "/home/project");
       expect(normalizedAlias).toEqual({
-        "@components": ["D:\\project\\src\\components"],
-        "@utils": ["D:\\project\\src\\utils"],
+        "@components": ["/home/project/src/components"],
+        "@utils": ["/home/project/src/utils"],
       });
     });
 
@@ -327,13 +333,13 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         "@utils": "src/utils",
       };
 
-      const normalizedAlias = normalizeAlias(alias, "D:\\project");
+      const normalizedAlias = normalizeAlias(alias, "/home/project");
       expect(normalizedAlias).toEqual({
         "@components": [
           "/src/components",
-          "D:\\project\\src\\extra-components",
+          "/home/project/src/extra-components",
         ],
-        "@utils": ["D:\\project\\src\\utils"],
+        "@utils": ["/home/project/src/utils"],
       });
     });
 
@@ -370,7 +376,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("reads pnpm workspace file when pnpmWorkspace is true", () => {
       mock({
-        "C:\\root\\pnpm-workspace.yaml": `
+        "/root/pnpm-workspace.yaml": `
           packages:
             - packages/*
             - apps/*
@@ -378,7 +384,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       });
 
       const opts = { pnpmWorkspace: true };
-      const result = normalizePackageGlobOptions(opts, "C:\\root");
+      const result = normalizePackageGlobOptions(opts, "/root");
       expect(result).toEqual({
         patterns: ["packages/*", "apps/*"],
       });
@@ -386,7 +392,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("reads custom pnpm workspace file path", () => {
       mock({
-        "C:\\root\\custom-workspace.yaml": `
+        "/root/custom-workspace.yaml": `
         packages:
           - custom-packages/*
           - custom-apps/*
@@ -394,7 +400,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       });
 
       const opts = { pnpmWorkspace: "custom-workspace.yaml" };
-      const result = normalizePackageGlobOptions(opts, "C:\\root");
+      const result = normalizePackageGlobOptions(opts, "/root");
       expect(result).toEqual({
         patterns: ["custom-packages/*", "custom-apps/*"],
       });
@@ -402,7 +408,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("merges patterns from pnpm workspace and explicit patterns", () => {
       mock({
-        "C:\\root\\pnpm-workspace.yaml": `
+        "/root/pnpm-workspace.yaml": `
           packages:
             - packages/*
             - apps/*
@@ -414,7 +420,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         patterns: ["extra/*"],
         ignore: ["**/dist/**"],
       };
-      const result = normalizePackageGlobOptions(opts, "C:\\root");
+      const result = normalizePackageGlobOptions(opts, "/root");
       expect(result).toEqual({
         patterns: ["packages/*", "apps/*", "extra/*"],
         ignore: ["**/dist/**"],
@@ -426,7 +432,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         ignore: ["**/node_modules/**"],
         expandDirectories: false,
       };
-      const result = normalizePackageGlobOptions(opts, "C:\\root");
+      const result = normalizePackageGlobOptions(opts, "/root");
       expect(result).toEqual({
         ignore: ["**/node_modules/**"],
         expandDirectories: false,
@@ -435,18 +441,18 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("handles empty or invalid pnpm workspace file", () => {
       mock({
-        "C:\\root\\pnpm-workspace.yaml": "",
+        "/root/pnpm-workspace.yaml": "",
       });
 
       const opts = { pnpmWorkspace: true };
 
-      const result = normalizePackageGlobOptions(opts, "C:\\root");
+      const result = normalizePackageGlobOptions(opts, "/root");
       expect(result).toEqual({});
     });
 
     it("removes duplicate patterns", () => {
       mock({
-        "C:\\root\\pnpm-workspace.yaml": `
+        "/root/pnpm-workspace.yaml": `
           packages:
             - packages/*
             - apps/*
@@ -457,14 +463,14 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         pnpmWorkspace: true,
         patterns: ["packages/*", "extra/*"],
       };
-      const result = normalizePackageGlobOptions(opts, "C:\\root");
+      const result = normalizePackageGlobOptions(opts, "/root");
       expect(result).toEqual({
         patterns: ["packages/*", "apps/*", "extra/*"],
       });
     });
 
     it("empty patterns when no patterns found", () => {
-      const result = normalizePackageGlobOptions([], "C:\\root");
+      const result = normalizePackageGlobOptions([], "/root");
 
       expect(result).toEqual({ patterns: [] });
     });
@@ -477,120 +483,106 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("finds packages with string array patterns", () => {
       mock({
-        "C:\\root\\packages\\a\\package.json": "{}",
-        "C:\\root\\packages\\b\\package.json": "{}",
-        "C:\\root\\apps\\c\\package.json": "{}",
+        "/root/packages/a/package.json": "{}",
+        "/root/packages/b/package.json": "{}",
+        "/root/apps/c/package.json": "{}",
       });
 
-      const packages = findAllPackages("C:\\root", ["packages/*", "apps/*"]);
-
+      const packages = findAllPackages("/root", ["packages/*", "apps/*"]);
       expect(packages).toEqual([
-        "C:\\root\\apps\\c",
-        "C:\\root\\packages\\a",
-        "C:\\root\\packages\\b",
+        "/root/apps/c",
+        "/root/packages/a",
+        "/root/packages/b",
       ]);
     });
 
     it("finds packages with PackageOptions", () => {
       mock({
-        "C:\\root\\packages\\a\\package.json": "{}",
-        "C:\\root\\packages\\b\\package.json": "{}",
-        "C:\\root\\apps\\c\\package.json": "{}",
+        "/root/packages/a/package.json": "{}",
+        "/root/packages/b/package.json": "{}",
+        "/root/node_modules/c/package.json": "{}",
       });
 
-      const packages = findAllPackages("C:\\root", {
-        patterns: ["packages/*", "apps/*"],
+      const packages = findAllPackages("/root", {
+        patterns: ["packages/*"],
+        ignore: ["**/node_modules/**"],
       });
-
-      expect(packages).toEqual([
-        "C:\\root\\apps\\c",
-        "C:\\root\\packages\\a",
-        "C:\\root\\packages\\b",
-      ]);
+      expect(packages).toEqual(["/root/packages/a", "/root/packages/b"]);
     });
 
     it("includes root package when includeRoot is true", () => {
       mock({
-        "C:\\root\\package.json": "{}",
-        "C:\\root\\packages\\a\\package.json": "{}",
+        "/root/package.json": "{}",
+        "/root/packages/a/package.json": "{}",
       });
 
-      const packages = findAllPackages("C:\\root", {
+      const packages = findAllPackages("/root", {
         patterns: ["packages/*"],
         includeRoot: true,
       });
-      expect(packages).toEqual(["C:\\root", "C:\\root\\packages\\a"]);
+      expect(packages).toEqual(["/root", "/root/packages/a"]);
     });
 
     it("returns empty array when no packages found", () => {
       mock({
-        "C:\\root/src/index.ts": "",
+        "/root/src/index.ts": "",
       });
 
-      const packages = findAllPackages("C:\\root", ["packages/*"]);
+      const packages = findAllPackages("/root", ["packages/*"]);
       expect(packages).toEqual([]);
     });
 
     it("handles multiple package descriptor formats", () => {
       mock({
-        "C:\\root\\a\\package.json": "{}",
-        "C:\\root\\b\\package.yaml": "name: b",
-        "C:\\root\\c\\package.json5": "{}",
+        "/root/a/package.json": "{}",
+        "/root/b/package.yaml": "name: b",
+        "/root/c/package.json5": "{}",
       });
 
-      const packages = findAllPackages("C:\\root", ["*"]);
-      expect(packages).toEqual(["C:\\root\\a", "C:\\root\\b", "C:\\root\\c"]);
+      const packages = findAllPackages("/root", ["*"]);
+      expect(packages).toEqual(["/root/a", "/root/b", "/root/c"]);
     });
 
     it("returns cached results on subsequent calls", () => {
       process.env.NEXT_RESOLVER_CACHE_DISABLED = "";
 
       mock({
-        "C:\\root\\packages\\a\\package.json": "{}",
-        "C:\\root\\packages\\b\\package.json": "{}",
+        "/root/packages/a/package.json": "{}",
+        "/root/packages/b/package.json": "{}",
       });
 
-      const firstCall = findAllPackages("C:\\root", ["packages/*"]);
-      expect(firstCall).toEqual([
-        "C:\\root\\packages\\a",
-        "C:\\root\\packages\\b",
-      ]);
+      const firstCall = findAllPackages("/root", ["packages/*"]);
+      expect(firstCall).toEqual(["/root/packages/a", "/root/packages/b"]);
 
       // Add new package after first call
       mock({
-        "C:\\root\\packages\\c\\package.json": "{}",
+        "/root/packages/c/package.json": "{}",
       });
 
-      const secondCall = findAllPackages("C:\\root", ["packages/*"]);
+      const secondCall = findAllPackages("/root", ["packages/*"]);
       // Should return cached result, ignoring new package
-      expect(secondCall).toEqual([
-        "C:\\root\\packages\\a",
-        "C:\\root\\packages\\b",
-      ]);
+      expect(secondCall).toEqual(["/root/packages/a", "/root/packages/b"]);
 
       process.env.NEXT_RESOLVER_CACHE_DISABLED = "1";
     });
 
     it("removes duplicate package paths", () => {
       mock({
-        "C:\\root\\packages\\a\\package.json": "{}",
-        "C:\\root\\packages\\a\\package.yaml": "{}",
-        "C:\\root\\packages\\b\\package.json": "{}",
+        "/root/packages/a/package.json": "{}",
+        "/root/packages/a/package.yaml": "{}",
+        "/root/packages/b/package.json": "{}",
       });
 
-      const packages = findAllPackages("C:\\root", ["packages/*"]);
-      expect(packages).toEqual([
-        "C:\\root\\packages\\a",
-        "C:\\root\\packages\\b",
-      ]);
+      const packages = findAllPackages("/root", ["packages/*"]);
+      expect(packages).toEqual(["/root/packages/a", "/root/packages/b"]);
     });
 
     it("returns empty array when no patterns provided", () => {
       mock({
-        "C:\\root\\packages\\a\\package.json": "{}",
+        "/root/packages/a/package.json": "{}",
       });
 
-      const packages = findAllPackages("C:\\root", []);
+      const packages = findAllPackages("/root", []);
       expect(packages).toEqual([]);
     });
   });
@@ -598,52 +590,49 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
   describe("test sortConfigFiles", () => {
     it("sorts config files by depth", () => {
       const files = [
-        "C:\\a\\b\\config.json",
-        "C:\\a\\b\\c\\config.json",
-        "C:\\a\\config.json",
+        "/a/b/config.json",
+        "/a/b/c/config.json",
+        "/a/config.json",
       ];
       const sorted = sortConfigFiles(files);
       expect(sorted).toEqual([
-        "C:\\a\\b\\c\\config.json",
-        "C:\\a\\b\\config.json",
-        "C:\\a\\config.json",
+        "/a/b/c/config.json",
+        "/a/b/config.json",
+        "/a/config.json",
       ]);
     });
 
     it("sorts files at same depth alphabetically reversed", () => {
       const files = [
-        "C:\\a\\b\\config1.json",
-        "C:\\a\\b\\config2.json",
-        "C:\\a\\b\\config3.json",
+        "/a/b/config1.json",
+        "/a/b/config2.json",
+        "/a/b/config3.json",
       ];
       const sorted = sortConfigFiles(files);
       expect(sorted).toEqual([
-        "C:\\a\\b\\config3.json",
-        "C:\\a\\b\\config2.json",
-        "C:\\a\\b\\config1.json",
+        "/a/b/config3.json",
+        "/a/b/config2.json",
+        "/a/b/config1.json",
       ]);
     });
 
     it("prioritizes tsconfig over jsconfig at same depth", () => {
-      const files = ["C:\\a\\b\\jsconfig.json", "C:\\a\\b\\tsconfig.json"];
+      const files = ["/a/b/jsconfig.json", "/a/b/tsconfig.json"];
       const sorted = sortConfigFiles(files, "tsconfig.json");
-      expect(sorted).toEqual([
-        "C:\\a\\b\\tsconfig.json",
-        "C:\\a\\b\\jsconfig.json",
-      ]);
+      expect(sorted).toEqual(["/a/b/tsconfig.json", "/a/b/jsconfig.json"]);
     });
 
     it("prioritizes depth over tsconfig filename", () => {
       const files = [
-        "C:\\a\\b\\jsconfig.json",
-        "C:\\a\\b\\c\\tsconfig.json",
-        "C:\\a\\b\\tsconfig.json",
+        "/a/b/jsconfig.json",
+        "/a/b/c/tsconfig.json",
+        "/a/b/tsconfig.json",
       ];
       const sorted = sortConfigFiles(files, "tsconfig.json");
       expect(sorted).toEqual([
-        "C:\\a\\b\\c\\tsconfig.json",
-        "C:\\a\\b\\tsconfig.json",
-        "C:\\a\\b\\jsconfig.json",
+        "/a/b/c/tsconfig.json",
+        "/a/b/tsconfig.json",
+        "/a/b/jsconfig.json",
       ]);
     });
 
@@ -668,111 +657,110 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("handles string config", () => {
       mock({
-        "C:\\root\\a\\custom.json": "{}",
-        "C:\\root\\b\\custom.json": "{}",
+        "/root/a/custom.json": "{}",
+        "/root/b/custom.json": "{}",
       });
 
-      const [filename, configFiles] = getConfigFiles(
-        "custom.json",
-        "C:\\root",
-        { filename: "config.json" },
-      );
+      const [filename, configFiles] = getConfigFiles("custom.json", "/root", {
+        filename: "config.json",
+        ignore: ["**/node_modules/**"],
+      });
 
       expect(filename).toBe("custom.json");
       expect(configFiles).toEqual([
-        "C:\\root\\a\\custom.json",
-        "C:\\root\\b\\custom.json",
+        "/root/a/custom.json",
+        "/root/b/custom.json",
       ]);
     });
 
     it("handles boolean config", () => {
       mock({
-        "C:\\root\\a\\default.json": "{}",
-        "C:\\root\\b\\default.json": "{}",
+        "/root/a/default.json": "{}",
+        "/root/b/default.json": "{}",
       });
 
-      const [filename, configFiles] = getConfigFiles(true, "C:\\root", {
+      const [filename, configFiles] = getConfigFiles(true, "/root", {
         filename: "default.json",
         ignore: ["**/node_modules/**"],
       });
 
       expect(filename).toBe("default.json");
       expect(configFiles).toEqual([
-        "C:\\root\\a\\default.json",
-        "C:\\root\\b\\default.json",
+        "/root/a/default.json",
+        "/root/b/default.json",
       ]);
     });
 
     it("handles object config with absolute configFile path", () => {
       const [filename, configFiles] = getConfigFiles(
-        { configFile: "C:\\absolute\\path\\config.json" },
-        "C:\\root",
+        { configFile: "/absolute/path/config.json" },
+        "/root",
         { filename: "default.json" },
       );
       expect(filename).toBe("config.json");
-      expect(configFiles).toEqual(["C:\\absolute\\path\\config.json"]);
+      expect(configFiles).toEqual(["/absolute/path/config.json"]);
     });
 
     it("handles object config with relative configFile path", () => {
       mock({
-        "C:\\root\\a\\custom.json": "{}",
-        "C:\\root\\b\\custom.json": "{}",
+        "/root/a/custom.json": "{}",
+        "/root/b/custom.json": "{}",
       });
 
       const [filename, configFiles] = getConfigFiles(
         { configFile: "custom.json" },
-        "C:\\root",
+        "/root",
         { filename: "default.json" },
       );
 
       expect(filename).toBe("custom.json");
       expect(configFiles).toEqual([
-        "C:\\root\\a\\custom.json",
-        "C:\\root\\b\\custom.json",
+        "/root/a/custom.json",
+        "/root/b/custom.json",
       ]);
     });
 
     it("handles object config without configFile", () => {
       mock({
-        "C:\\root\\a\\default.json": "{}",
-        "C:\\root\\b\\default.json": "{}",
-        "C:\\root\\node_modules\\c\\default.json": "{}",
+        "/root/a/default.json": "{}",
+        "/root/b/default.json": "{}",
+        "/root/node_modules/c/default.json": "{}",
       });
 
       const [filename, configFiles] = getConfigFiles(
         { ignore: ["**/node_modules/**"] },
-        "C:\\root",
+        "/root",
         { filename: "default.json" },
       );
 
       expect(filename).toBe("default.json");
       expect(configFiles).toEqual([
-        "C:\\root\\a\\default.json",
-        "C:\\root\\b\\default.json",
+        "/root/a/default.json",
+        "/root/b/default.json",
       ]);
     });
 
     it("uses default ignore patterns when not specified", () => {
       mock({
-        "C:\\root\\a\\config.json": "{}",
-        "C:\\root\\node_modules\\b\\config.json": "{}",
+        "/root/a/config.json": "{}",
+        "/root/node_modules/b/config.json": "{}",
       });
 
-      const [filename, configFiles] = getConfigFiles(true, "C:\\root", {
+      const [filename, configFiles] = getConfigFiles(true, "/root", {
         filename: "config.json",
         ignore: ["**/node_modules/**"],
       });
 
       expect(filename).toBe("config.json");
-      expect(configFiles).toEqual(["C:\\root\\a\\config.json"]);
+      expect(configFiles).toEqual(["/root/a/config.json"]);
     });
 
     it("returns empty array when no config files found", () => {
       mock({
-        "C:\\root\\src\\index.ts": "",
+        "/root/src/index.ts": "",
       });
 
-      const [filename, configFiles] = getConfigFiles(true, "C:\\root", {
+      const [filename, configFiles] = getConfigFiles(true, "/root", {
         filename: "nonexistent.json",
       });
 
@@ -793,16 +781,15 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
-
       expect(result).toBeUndefined();
     });
 
     it("handles single tsconfig file", () => {
       mock({
-        "C:\\root\\tsconfig.json": "{}",
+        "/root/tsconfig.json": "{}",
       });
 
       const configs = {
@@ -812,39 +799,41 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\tsconfig.json",
+        configFile: "/root/tsconfig.json",
       });
     });
 
     it("handles single jsconfig file", () => {
       mock({
-        "C:\\root\\jsconfig.json": "{}",
+        "/root/jsconfig.json": "{}",
       });
+
       const configs = {
         tsconfig: undefined,
         jsconfig: true,
       };
+
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\jsconfig.json",
+        configFile: "/root/jsconfig.json",
       });
     });
 
     it("prioritizes closest config file when multiple exist", () => {
       mock({
-        "C:\\root\\tsconfig.json": "{}",
-        "C:\\root\\src\\tsconfig.json": "{}",
-        "C:\\root\\src\\lib\\tsconfig.json": "{}",
+        "/root/tsconfig.json": "{}",
+        "/root/src/tsconfig.json": "{}",
+        "/root/src/lib/tsconfig.json": "{}",
       });
 
       const configs = {
@@ -854,19 +843,19 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\lib\\file.ts",
+        "/root",
+        "/root/src/lib/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\src\\lib\\tsconfig.json",
+        configFile: "/root/src/lib/tsconfig.json",
       });
     });
 
     it("prioritizes tsconfig over jsconfig at same depth", () => {
       mock({
-        "C:\\root\\src\\jsconfig.json": "{}",
-        "C:\\root\\src\\tsconfig.json": "{}",
+        "/root/src/tsconfig.json": "{}",
+        "/root/src/jsconfig.json": "{}",
       });
 
       const configs = {
@@ -876,18 +865,18 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\src\\tsconfig.json",
+        configFile: "/root/src/tsconfig.json",
       });
     });
 
     it("returns undefined when no config files found", () => {
       mock({
-        "C:\\root\\src\\file.ts": "",
+        "/root/src/file.ts": "",
       });
 
       const configs = {
@@ -897,17 +886,17 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
-
       expect(result).toBeUndefined();
     });
 
     it("uses cache for subsequent calls", () => {
       process.env.NEXT_RESOLVER_CACHE_DISABLED = "";
+
       mock({
-        "C:\\root\\tsconfig.json": "{}",
+        "/root/tsconfig.json": "{}",
       });
 
       const configs = {
@@ -917,20 +906,20 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const firstCall = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
 
       // Add new config file after first call
       mock({
-        "C:\\root\\tsconfig.json": "{}",
-        "C:\\root\\src\\tsconfig.json": "{}",
+        "/root/tsconfig.json": "{}",
+        "/root/src/tsconfig.json": "{}",
       });
 
       const secondCall = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
 
       // Should return same result from cache
@@ -941,7 +930,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("handles custom config file paths", () => {
       mock({
-        "C:\\root\\custom.json": "{}",
+        "/root/custom.json": "{}",
       });
 
       const configs = {
@@ -951,18 +940,18 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\custom.json",
+        configFile: "/root/custom.json",
       });
     });
 
     it("handles config options object", () => {
       mock({
-        "C:\\root\\custom.json": "{}",
+        "/root/custom.json": "{}",
       });
 
       const configs = {
@@ -972,21 +961,22 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         },
         jsconfig: undefined,
       };
+
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\src\\file.ts",
+        "/root",
+        "/root/src/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\custom.json",
+        configFile: "/root/custom.json",
       });
     });
 
     it("handles custom config file paths with ignore patterns", () => {
       mock({
-        "C:\\root\\custom.json": "{}",
-        "C:\\root\\dist\\custom.json": "{}",
+        "/root/custom.json": "{}",
+        "/root/dist/custom.json": "{}",
       });
 
       const configs = {
@@ -996,14 +986,15 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
         },
         jsconfig: undefined,
       };
+
       const result = normalizeConfigFileOptions(
         configs,
-        "C:\\root",
-        "C:\\root\\dist\\file.ts",
+        "/root",
+        "/root/dist/file.ts",
       );
       expect(result).toEqual({
         ...restDefaultOptions,
-        configFile: "C:\\root\\custom.json",
+        configFile: "/root/custom.json",
       });
     });
   });
@@ -1014,65 +1005,62 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
     });
 
     it("returns sorted roots when no packages provided", () => {
-      const roots = ["C:\\root\\a", "C:\\root\\b", "C:\\root\\c\\d"];
+      const roots = ["/root/a", "/root/b", "/root/c/d"];
       const result = findWorkspacePackages(roots);
-      expect(result).toEqual(["C:\\root\\c\\d", "C:\\root\\b", "C:\\root\\a"]);
+      expect(result).toEqual(["/root/c/d", "/root/b", "/root/a"]);
     });
 
     it("finds packages with string array patterns", () => {
       mock({
-        "C:\\root1\\packages\\a\\package.json": "{}",
-        "C:\\root1\\packages\\b\\package.json": "{}",
-        "C:\\root2\\packages\\c\\package.json": "{}",
+        "/root1/packages/a/package.json": "{}",
+        "/root1/packages/b/package.json": "{}",
+        "/root2/packages/c/package.json": "{}",
       });
 
-      const roots = ["C:\\root1", "C:\\root2"];
+      const roots = ["/root1", "/root2"];
       const packages = ["packages/*"];
 
       const result = findWorkspacePackages(roots, packages);
       expect(result).toEqual([
-        "C:\\root2\\packages\\c",
-        "C:\\root1\\packages\\b",
-        "C:\\root1\\packages\\a",
+        "/root2/packages/c",
+        "/root1/packages/b",
+        "/root1/packages/a",
       ]);
     });
 
     it("finds packages with PackageOptions", () => {
       mock({
-        "C:\\root1\\packages\\a\\package.json": "{}",
-        "C:\\root1\\node_modules\\b\\package.json": "{}",
-        "C:\\root2\\packages\\c\\package.json": "{}",
-        "C:\\root2\\node_modules\\d\\package.json": "{}",
+        "/root1/packages/a/package.json": "{}",
+        "/root1/node_modules/b/package.json": "{}",
+        "/root2/packages/c/package.json": "{}",
+        "/root2/node_modules/d/package.json": "{}",
       });
 
-      const roots = ["C:\\root1", "C:\\root2"];
+      const roots = ["/root1", "/root2"];
       const packages = {
         patterns: ["packages/*"],
         ignore: ["**/node_modules/**"],
       };
 
       const result = findWorkspacePackages(roots, packages);
-      expect(result).toEqual([
-        "C:\\root2\\packages\\c",
-        "C:\\root1\\packages\\a",
-      ]);
+      expect(result).toEqual(["/root2/packages/c", "/root1/packages/a"]);
     });
 
     it("removes duplicate packages across roots", () => {
       mock({
-        "C:\\root1\\packages\\shared\\package.json": "{}",
-        "C:\\root2\\packages\\shared\\package.json": "{}",
-        "C:\\root1\\packages\\unique\\package.json": "{}",
+        "/root1/packages/shared/package.json": "{}",
+        "/root2/packages/shared/package.json": "{}",
+        "/root1/packages/unique/package.json": "{}",
       });
 
-      const roots = ["C:\\root1", "C:\\root2"];
+      const roots = ["/root1", "/root2"];
       const packages = ["packages/*"];
 
       const result = findWorkspacePackages(roots, packages);
       expect(result).toEqual([
-        "C:\\root2\\packages\\shared",
-        "C:\\root1\\packages\\unique",
-        "C:\\root1\\packages\\shared",
+        "/root2/packages/shared",
+        "/root1/packages/unique",
+        "/root1/packages/shared",
       ]);
     });
 
@@ -1083,11 +1071,11 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
 
     it("handles empty package patterns", () => {
       mock({
-        "C:\\root1\\package.json": "{}",
-        "C:\\root2\\package.json": "{}",
+        "/root1/package.json": "{}",
+        "/root2/package.json": "{}",
       });
 
-      const roots = ["C:\\root1", "C:\\root2"];
+      const roots = ["/root1", "/root2"];
       const packages = { patterns: [] };
 
       const result = findWorkspacePackages(roots, packages);
