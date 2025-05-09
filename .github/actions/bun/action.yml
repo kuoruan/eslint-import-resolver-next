@@ -5,5 +5,9 @@ runs:
   using: composite
   steps:
     - uses: oven-sh/setup-bun@v2
-    - run: bun install
-    - run: bun run test
+    - name: Run install
+      shell: bash
+      run: bun install
+    - name: Run test
+      shell: bash
+      run: bun run test

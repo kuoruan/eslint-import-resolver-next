@@ -12,5 +12,9 @@ runs:
       with:
         node-version: '18'
         cache: 'pnpm'
-    - run: pnpm install
-    - run: pnpm run test
+    - name: Run install
+      shell: bash
+      run: pnpm install
+    - name: Run test
+      shell: bash
+      run: pnpm run test
