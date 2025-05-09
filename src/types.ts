@@ -1,4 +1,4 @@
-import type { NapiResolveOptions } from "oxc-resolver";
+import type { NapiResolveOptions } from "unrs-resolver";
 
 export interface PackageGlobOptions {
   /**

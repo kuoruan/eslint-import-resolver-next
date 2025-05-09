@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { type NapiResolveOptions, ResolverFactory } from "oxc-resolver";
+import { type NapiResolveOptions, ResolverFactory } from "unrs-resolver";
 
 import type { ResolvedResult } from "./types.js";
 import { hashObject } from "./utils.js";
