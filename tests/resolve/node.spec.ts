@@ -1,3 +1,5 @@
+import process from "process";
+
 import { createNextImportResolver, resolve } from "@/resolve";
 
 describe.runIf(!process.versions.bun)("resolve node buildins", () => {

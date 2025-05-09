@@ -1,4 +1,5 @@
 import mock from "mock-fs";
+import process from "process";
 
 import { defaultConfigFileOptions } from "@/constants";
 import {
