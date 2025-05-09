@@ -1,12 +1,13 @@
-import process from "process";
-
 import { createNextImportResolver, resolve } from "@/resolve";
+import { Options } from "@/types";
 
-describe.runIf(!!process.versions.bun)("resolve bun buildins", () => {
-  const resolverV3 = createNextImportResolver();
+describe("resolve bun buildins", () => {
+  const resolverOptions: Options = { bun: true };
+
+  const resolverV3 = createNextImportResolver(resolverOptions);
 
   it("only module name", () => {
-    expect(resolve("fs", "/src/source.js")).toEqual({
+    expect(resolve("fs", "/src/source.js", resolverOptions)).toEqual({
       found: true,
       path: null,
     });
@@ -18,7 +19,7 @@ describe.runIf(!!process.versions.bun)("resolve bun buildins", () => {
   });
 
   it("with bun: prefix", () => {
-    expect(resolve("bun:sqlite", "/src/source.js")).toEqual({
+    expect(resolve("bun:sqlite", "/src/source.js", resolverOptions)).toEqual({
       found: true,
       path: null,
     });
@@ -29,7 +30,7 @@ describe.runIf(!!process.versions.bun)("resolve bun buildins", () => {
   });
 
   it("with node: prefix", () => {
-    expect(resolve("node:fs", "/src/source.js")).toEqual({
+    expect(resolve("node:fs", "/src/source.js", resolverOptions)).toEqual({
       found: true,
       path: null,
     });
@@ -42,7 +43,7 @@ describe.runIf(!!process.versions.bun)("resolve bun buildins", () => {
 
   it("with non-exist module name", () => {
     expect(
-      resolverV3.resolve("node:non-exist-module", "/src/source.js"),
+      resolve("node:non-exist-module", "/src/source.js", resolverOptions),
     ).toEqual({
       found: false,
     });
