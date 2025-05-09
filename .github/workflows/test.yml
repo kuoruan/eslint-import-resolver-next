@@ -10,16 +10,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        runtime: [node, bun]
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm run test
+      - name: Test on Node
+        if: matrix.runtime == 'node'
+        uses: ./.github/actions/node
+      - name: Test on Bun
+        if: matrix.runtime == 'bun'
+        uses: ./.github/actions/bun
