@@ -17,13 +17,11 @@ import {
   unique,
 } from "./utils.js";
 
-const isBun = !!process.versions.bun;
-
 export function checkBuiltinModule(
   modulePath: string,
-  bun = false,
+  isBun = false,
 ): ResolvedResult | undefined {
-  if (bun || isBun) {
+  if (isBun) {
     if (isBunBuiltin(modulePath)) {
       return { found: true, path: null };
     }
