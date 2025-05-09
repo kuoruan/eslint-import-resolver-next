@@ -17,7 +17,8 @@
     "eslint-plugin-import",
     "eslint-plugin-import-x",
     "eslint-import-resolver",
-    "oxc-resolver"
+    "oxc-resolver",
+    "unrs-resolver"
   ],
   "repository": "https://github.com/kuoruan/eslint-import-resolver-next",
   "license": "MIT",
