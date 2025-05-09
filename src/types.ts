@@ -62,6 +62,8 @@ export interface Options
    * - `object` to specify the package options, see `PackageOptions`
    */
   packages?: string[] | PackageOptions;
+
+  bun?: boolean;
 }
 
 export interface ResultNotFound {

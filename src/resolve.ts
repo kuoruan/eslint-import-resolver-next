@@ -21,8 +21,9 @@ const isBun = !!process.versions.bun;
 
 export function checkBuiltinModule(
   modulePath: string,
+  bun = false,
 ): ResolvedResult | undefined {
-  if (isBun) {
+  if (bun || isBun) {
     if (isBunBuiltin(modulePath)) {
       return { found: true, path: null };
     }
@@ -54,7 +55,12 @@ export function resolve(
 ): ResolvedResult {
   const cleanedPath = removeQueryString(modulePath);
 
-  const result = checkBuiltinModule(cleanedPath);
+  const { roots, alias, packages, jsconfig, tsconfig, bun, ...restOptions } = {
+    ...defaultOptions,
+    ...config,
+  };
+
+  const result = checkBuiltinModule(cleanedPath, bun);
   if (result) {
     return result;
   }
@@ -64,11 +70,6 @@ export function resolve(
 
     return result ? { found: true, path: null } : { found: false };
   }
-
-  const { roots, alias, packages, jsconfig, tsconfig, ...restOptions } = {
-    ...defaultOptions,
-    ...config,
-  };
 
   // relative path
   if (modulePath.startsWith(".")) {
@@ -107,7 +108,7 @@ export function resolve(
 export function createNextImportResolver(
   config?: Options | null,
 ): NextImportResolver {
-  const { roots, alias, packages, jsconfig, tsconfig, ...restOptions } = {
+  const { roots, alias, packages, jsconfig, tsconfig, bun, ...restOptions } = {
     ...defaultOptions,
     ...config,
   };
@@ -122,7 +123,7 @@ export function createNextImportResolver(
     resolve: (modulePath: string, sourceFile: string) => {
       const cleanedPath = removeQueryString(modulePath);
 
-      const result = checkBuiltinModule(cleanedPath);
+      const result = checkBuiltinModule(cleanedPath, bun);
       if (result) {
         return result;
       }
