@@ -1,0 +1,13 @@
+name: Test for Bun
+description: Test resolver on Bun
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+    - name: Run install
+      shell: bash
+      run: bun install
+    - name: Run test
+      shell: bash
+      run: bun run test

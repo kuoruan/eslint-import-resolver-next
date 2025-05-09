@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import module from "node:module";
 import path from "node:path";
 
 import yaml from "js-yaml";
@@ -39,8 +40,28 @@ export function unique<T>(arr: T[]): T[] {
 }
 
 /**
- * Remove prefix and querystrings from the module path.
- * When using node: prefix, we should remove it.
+ * Check if the module has a Node.js prefix.
+ *
+ * @param modulePath - the module path
+ * @returns {boolean} true if the module has a Node.js prefix, false otherwise
+ */
+export function hasNodePrefix(modulePath: string): boolean {
+  return modulePath.startsWith("node:");
+}
+
+/**
+ * Check if the module has a Bun prefix.
+ *
+ * @param modulePath - the module path
+ * @returns {boolean} true if the module has a Bun prefix, false otherwise
+ */
+export function hasBunPrefix(modulePath: string): boolean {
+  return modulePath.startsWith("bun:");
+}
+
+/**
+ * Remove querystrings from the module path.
+ *
  * Some imports may have querystrings, for example:
  *  * import "foo?bar";
  *
@@ -48,20 +69,31 @@ export function unique<T>(arr: T[]): T[] {
  *
  * @returns {string} cleaned module path
  */
-export function cleanModulePath(modulePath: string) {
+export function removeQueryString(modulePath: string) {
+  const querystringIndex = modulePath.indexOf("?");
+
+  if (querystringIndex > -1) {
+    return modulePath.slice(0, querystringIndex);
+  }
+
+  return modulePath;
+}
+
+/**
+ * Check if the module is a built-in module with a prefix.
+ *
+ * @param {string} modulePath - the module path
+ *
+ * @returns {boolean} true if the module is a built-in module with a prefix, false otherwise
+ */
+export function isNodeBuiltin(modulePath: string): boolean {
   let cleanedPath = modulePath;
 
-  if (cleanedPath.startsWith("node:")) {
+  if (hasNodePrefix(modulePath)) {
     cleanedPath = modulePath.slice(5);
   }
 
-  const querystringIndex = cleanedPath.lastIndexOf("?");
-
-  if (querystringIndex > -1) {
-    return cleanedPath.slice(0, querystringIndex);
-  }
-
-  return cleanedPath;
+  return module.builtinModules.includes(cleanedPath);
 }
 
 /**

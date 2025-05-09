@@ -1,32 +1,68 @@
-import module from "node:module";
 import process from "node:process";
+
+import { isBunBuiltin } from "is-bun-module";
 
 import { defaultOptions } from "./constants.js";
 import { resolveModulePath, resolveRelativePath } from "./resolver.js";
 import type { NextImportResolver, Options, ResolvedResult } from "./types.js";
 import {
-  cleanModulePath,
   findClosestPackageRoot,
   findWorkspacePackages,
+  hasBunPrefix,
+  hasNodePrefix,
+  isNodeBuiltin,
   normalizeAlias,
   normalizeConfigFileOptions,
+  removeQueryString,
   unique,
 } from "./utils.js";
+
+const isBun = !!process.versions.bun;
+
+export function checkBuiltinModule(
+  modulePath: string,
+): ResolvedResult | undefined {
+  if (isBun) {
+    if (isBunBuiltin(modulePath)) {
+      return { found: true, path: null };
+    }
+
+    if (hasNodePrefix(modulePath) || hasBunPrefix(modulePath)) {
+      return { found: false };
+    }
+  } else {
+    if (hasNodePrefix(modulePath)) {
+      const result = isNodeBuiltin(modulePath);
+
+      return result ? { found: true, path: null } : { found: false };
+    }
+
+    if (hasBunPrefix(modulePath)) {
+      return { found: false };
+    }
+
+    if (isNodeBuiltin(modulePath)) {
+      return { found: true, path: null };
+    }
+  }
+}
 
 export function resolve(
   modulePath: string,
   sourceFile: string,
   config?: Options | null,
 ): ResolvedResult {
-  const cleanedPath = cleanModulePath(modulePath);
+  const cleanedPath = removeQueryString(modulePath);
 
-  if (module.builtinModules.includes(cleanedPath)) {
-    return { found: true, path: null };
+  const result = checkBuiltinModule(cleanedPath);
+  if (result) {
+    return result;
   }
 
-  // wrong node module path
-  if (modulePath.startsWith("node:")) {
-    return { found: false };
+  if (hasNodePrefix(cleanedPath) || hasBunPrefix(cleanedPath)) {
+    const result = isNodeBuiltin(cleanedPath);
+
+    return result ? { found: true, path: null } : { found: false };
   }
 
   const { roots, alias, packages, jsconfig, tsconfig, ...restOptions } = {
@@ -84,15 +120,11 @@ export function createNextImportResolver(
     interfaceVersion: 3,
     name: "eslint-import-resolver-next",
     resolve: (modulePath: string, sourceFile: string) => {
-      const cleanedPath = cleanModulePath(modulePath);
+      const cleanedPath = removeQueryString(modulePath);
 
-      if (module.builtinModules.includes(cleanedPath)) {
-        return { found: true, path: null };
-      }
-
-      // wrong node module path
-      if (modulePath.startsWith("node:")) {
-        return { found: false };
+      const result = checkBuiltinModule(cleanedPath);
+      if (result) {
+        return result;
       }
 
       const packageDir = findClosestPackageRoot(sourceFile, workspacePackages);

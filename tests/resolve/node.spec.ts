@@ -1,6 +1,8 @@
+import process from "process";
+
 import { createNextImportResolver, resolve } from "@/resolve";
 
-describe("resolve buildins", () => {
+describe.runIf(!process.versions.bun)("resolve node buildins", () => {
   const resolverV3 = createNextImportResolver();
 
   it("only module name", () => {
@@ -27,15 +29,27 @@ describe("resolve buildins", () => {
     });
   });
 
-  it("with non-exist module name", () => {
-    expect(resolve("non-exist-module", "/src/source.js")).deep.equal({
+  it("with bun: prefix", () => {
+    expect(resolve("bun:fs", "/src/source.js")).deep.equal({
       found: false,
     });
 
-    expect(resolverV3.resolve("non-exist-module", "/src/source.js")).deep.equal(
-      {
-        found: false,
-      },
-    );
+    expect(resolverV3.resolve("bun:fs", "/src/source.js")).deep.equal({
+      found: false,
+    });
+  });
+
+  it("with non-exist module name", () => {
+    expect(
+      resolverV3.resolve("node:non-exist-module", "/src/source.js"),
+    ).deep.equal({
+      found: false,
+    });
+
+    expect(
+      resolverV3.resolve("node:non-exist-module", "/src/source.js"),
+    ).deep.equal({
+      found: false,
+    });
   });
 });
