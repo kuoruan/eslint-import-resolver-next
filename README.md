@@ -106,7 +106,7 @@ module.exports = {
   * If an array, the resolver will search for packages in the specified patterns.
   * If an object, see `PackageOptions`.
 
-All other options are passed to the `oxc-resolver` package. See the [oxc-resolver documentation](https://github.com/oxc-project/oxc-resolver#options)
+All other options are passed to the `unrs-resolver` package. See the [unrs-resolver documentation](https://github.com/unrs/unrs-resolver#options)
 
 ### ConfigFileOptions
 
