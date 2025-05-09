@@ -2,9 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 import yaml from "js-yaml";
-import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash";
 import { globSync } from "tinyglobby";
+import type { TsconfigOptions } from "unrs-resolver";
 
 import {
   getConfigFilesCache,

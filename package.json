@@ -36,9 +36,9 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "oxc-resolver": "^5.0.1",
     "stable-hash": "^0.0.5",
-    "tinyglobby": "^0.2.12"
+    "tinyglobby": "^0.2.12",
+    "unrs-resolver": "^1.7.2"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.26.10",
