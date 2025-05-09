@@ -10,9 +10,7 @@ let relativeResolver: ResolverFactory | null = null;
 export function getRelativeResolver(
   options: NapiResolveOptions,
 ): ResolverFactory {
-  if (!relativeResolver) {
-    relativeResolver = new ResolverFactory(options);
-  }
+  relativeResolver ??= new ResolverFactory(options);
 
   return relativeResolver;
 }
