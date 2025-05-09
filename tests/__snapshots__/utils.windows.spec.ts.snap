@@ -1,3 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`utils (Windows) > test hash object > hash object 1`] = `"#d:#e:"f",,c:@1,2,3,,b:"string",a:1,"`;
