@@ -47,6 +47,17 @@ export const defaultOptions = {
     ".jsx": [".tsx", ".d.ts", ".jsx"],
     ".cjs": [".cts", ".d.cts", ".cjs"],
     ".mjs": [".mts", ".d.mts", ".mjs"],
+
+    ".ts": [".ts", ".d.ts", ".js"],
+    ".tsx": [
+      ".tsx",
+      ".d.ts",
+      ".jsx",
+      // `.tsx` can also be compiled as `.js`
+      ".js",
+    ],
+    ".cts": [".cts", ".d.cts", ".cjs"],
+    ".mts": [".mts", ".d.mts", ".mjs"],
   },
   extensions: [".ts", ".tsx", ".d.ts", ".js", ".jsx", ".json", ".node"],
   mainFields: [
