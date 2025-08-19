@@ -1,3 +1,5 @@
+import process from "node:process";
+
 import {
   hasBunPrefix,
   hashObject,
@@ -205,6 +207,52 @@ describe("utils", () => {
 
     it("returns false for bun: prefixed modules", () => {
       expect(isNodeBuiltin("bun:fs")).toBe(false);
+    });
+  });
+
+  describe("test getResolveRoots", () => {
+    const originalProcessCwd = process.cwd.bind(null);
+    let mockCwd: string;
+
+    beforeEach(() => {
+      mockCwd = "/mock/cwd";
+      process.cwd = () => mockCwd;
+    });
+
+    afterEach(() => {
+      process.cwd = originalProcessCwd;
+      vi.resetModules();
+      vi.clearAllMocks();
+    });
+
+    it("returns the provided roots if given", async () => {
+      const { getResolveRoots } = await import("@/utils.js");
+      const roots = ["/foo/bar", "/baz"];
+      expect(getResolveRoots(roots)).toEqual(roots);
+    });
+
+    it("returns context.cwd if available (mock eslint-import-context)", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: "/context/cwd" }),
+      }));
+      const { getResolveRoots } = await import("@/utils.js");
+      expect(getResolveRoots()).toEqual(["/context/cwd"]);
+    });
+
+    it("returns process.cwd() if context is undefined (mock eslint-import-context)", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => undefined,
+      }));
+      const { getResolveRoots } = await import("@/utils.js");
+      expect(getResolveRoots()).toEqual([mockCwd]);
+    });
+
+    it("returns process.cwd() if cwd is not available (mock eslint-import-context)", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({}),
+      }));
+      const { getResolveRoots } = await import("@/utils.js");
+      expect(getResolveRoots()).toEqual([mockCwd]);
     });
   });
 });

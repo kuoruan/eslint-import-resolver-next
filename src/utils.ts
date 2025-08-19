@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import module from "node:module";
 import path from "node:path";
+import process from "node:process";
 
+import { useRuleContext } from "eslint-import-context";
 import yaml from "js-yaml";
 import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash-x";
@@ -535,4 +537,17 @@ export function findWorkspacePackages(
   }
 
   return sortPathsByDepth([...roots]);
+}
+
+/**
+ * Get the resolve roots. if `roots` is not provided, it will use the current working directory.
+ *
+ * @param roots {string[]} - the root directories
+ * @returns {string[]} - the resolve roots
+ */
+export function getResolveRoots(roots?: string[]): string[] {
+  if (roots?.length) return [...roots];
+
+  const context = useRuleContext();
+  return [context?.cwd ?? process.cwd()];
 }
