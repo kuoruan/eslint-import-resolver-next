@@ -17,8 +17,7 @@
     "eslint-plugin-import",
     "eslint-plugin-import-x",
     "eslint-import-resolver",
-    "oxc-resolver",
-    "unrs-resolver"
+    "oxc-resolver"
   ],
   "repository": "https://github.com/kuoruan/eslint-import-resolver-next",
   "license": "MIT",
@@ -38,9 +37,9 @@
   "dependencies": {
     "is-bun-module": "^2.0.0",
     "js-yaml": "^4.1.0",
+    "oxc-resolver": "^11.6.1",
     "stable-hash-x": "^0.2.0",
-    "tinyglobby": "^0.2.14",
-    "unrs-resolver": "^1.11.1"
+    "tinyglobby": "^0.2.14"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.0",

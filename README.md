@@ -4,11 +4,11 @@
 [![npm](https://img.shields.io/npm/dw/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
 [![npm](https://img.shields.io/npm/l/eslint-import-resolver-next.svg)](https://www.npmjs.com/package/eslint-import-resolver-next)
 
-The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) or [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) that resolves modules with [`unrs-resolver`](https://github.com/unrs/unrs-resolver).
+The next resolver plugin for [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) or [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) that resolves modules with [`oxc-resolver`](https://github.com/oxc-project/oxc-resolver).
 
 ## Features
 
-- Resolves modules using the [`unrs-resolver`](https://github.com/unrs/unrs-resolver) package.
+- Resolves modules using the [`oxc-resolver`](https://github.com/oxc-project/oxc-resolver) package.
 - Support mono-repos and `pnpm-workspaces.yaml`.
 - Support paths alias defined in `tsconfig.compilerOptions.paths` or `jsconfig.compilerOptions.paths`.
 
@@ -109,7 +109,7 @@ module.exports = {
 - `bun` (boolean): Weather to enable the `bun` support. Default: `true` if bun environment is detected.
   * If `true`, the resolver will try to resolve bun built-in modules.
 
-All other options are passed to the `unrs-resolver` package. See the [unrs-resolver documentation](https://github.com/unrs/unrs-resolver#options)
+All other options are passed to the `oxc-resolver` package. See the [oxc-resolver documentation](https://github.com/oxc-project/oxc-resolver#options)
 
 ### ConfigFileOptions
 
