@@ -1,6 +1,6 @@
-import { getSingleRepoPath } from "@tests/utils";
+import { getSingleRepoPath } from "@tests/utils.js";
 
-import { createNextImportResolver, resolve } from "@/resolve";
+import { createNextImportResolver, resolve } from "@/resolve.js";
 
 describe("resolve alias", () => {
   const roots = [getSingleRepoPath()];

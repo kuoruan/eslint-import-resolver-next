@@ -1,4 +1,4 @@
-import { createNextImportResolver, resolve } from "@/resolve";
+import { createNextImportResolver, resolve } from "@/resolve.js";
 
 describe("resolve node buildins", () => {
   const resolverV3 = createNextImportResolver();

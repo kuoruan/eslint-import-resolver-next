@@ -1,5 +1,5 @@
-import { createNextImportResolver, resolve } from "@/resolve";
-import { Options } from "@/types";
+import { createNextImportResolver, resolve } from "@/resolve.js";
+import { Options } from "@/types.js";
 
 describe("resolve bun buildins", () => {
   const resolverOptions: Options = { bun: true };

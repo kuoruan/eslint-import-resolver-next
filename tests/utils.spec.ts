@@ -5,7 +5,7 @@ import {
   isNodeBuiltin,
   removeQueryString,
   unique,
-} from "@/utils";
+} from "@/utils.js";
 
 describe("utils", () => {
   describe("test unique", () => {

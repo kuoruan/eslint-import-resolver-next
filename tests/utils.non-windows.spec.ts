@@ -1,7 +1,7 @@
 import mock from "mock-fs";
 import process from "process";
 
-import { defaultConfigFileOptions } from "@/constants";
+import { defaultConfigFileOptions } from "@/constants.js";
 import {
   findAllPackages,
   findClosestConfigFile,
@@ -16,7 +16,7 @@ import {
   readYamlFile,
   sortConfigFiles,
   sortPathsByDepth,
-} from "@/utils";
+} from "@/utils.js";
 
 process.env.NEXT_RESOLVER_CACHE_DISABLED = "1";
 

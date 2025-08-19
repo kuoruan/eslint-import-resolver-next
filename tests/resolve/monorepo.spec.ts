@@ -1,6 +1,6 @@
-import { getMonoRepoPath } from "@tests/utils";
+import { getMonoRepoPath } from "@tests/utils.js";
 
-import { createNextImportResolver, resolve } from "@/resolve";
+import { createNextImportResolver, resolve } from "@/resolve.js";
 
 describe("Test monorepo", () => {
   const roots = [getMonoRepoPath()];
