@@ -35,6 +35,7 @@
     "prepublishOnly": "npm run test"
   },
   "dependencies": {
+    "eslint-import-context": "^0.2.0",
     "is-bun-module": "^2.0.0",
     "js-yaml": "^4.1.0",
     "oxc-resolver": "^11.6.1",

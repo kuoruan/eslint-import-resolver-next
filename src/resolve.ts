@@ -1,5 +1,3 @@
-import process from "node:process";
-
 import { isBunBuiltin } from "is-bun-module";
 
 import { defaultOptions } from "./constants.js";
@@ -8,6 +6,7 @@ import type { NextImportResolver, Options, ResolvedResult } from "./types.js";
 import {
   findClosestPackageRoot,
   findWorkspacePackages,
+  getResolveRoots,
   hasBunPrefix,
   hasNodePrefix,
   isNodeBuiltin,
@@ -74,7 +73,7 @@ export function resolve(
     return resolveRelativePath(sourceFile, modulePath, restOptions);
   }
 
-  const resolveRoots = roots?.length ? roots : [process.cwd()];
+  const resolveRoots = getResolveRoots(roots);
 
   const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
@@ -111,7 +110,7 @@ export function createNextImportResolver(
     ...config,
   };
 
-  const resolveRoots = roots?.length ? roots : [process.cwd()];
+  const resolveRoots = getResolveRoots(roots);
 
   const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
