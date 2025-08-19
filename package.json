@@ -38,7 +38,7 @@
   "dependencies": {
     "is-bun-module": "^2.0.0",
     "js-yaml": "^4.1.0",
-    "stable-hash": "^0.0.5",
+    "stable-hash-x": "^0.2.0",
     "tinyglobby": "^0.2.13",
     "unrs-resolver": "^1.7.2"
   },

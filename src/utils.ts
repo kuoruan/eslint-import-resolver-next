@@ -3,7 +3,7 @@ import module from "node:module";
 import path from "node:path";
 
 import yaml from "js-yaml";
-import { stableHash } from "stable-hash";
+import { stableHash } from "stable-hash-x";
 import { globSync } from "tinyglobby";
 import type { TsconfigOptions } from "unrs-resolver";
 
