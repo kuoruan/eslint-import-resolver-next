@@ -3,9 +3,9 @@ import module from "node:module";
 import path from "node:path";
 
 import yaml from "js-yaml";
+import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash-x";
 import { globSync } from "tinyglobby";
-import type { TsconfigOptions } from "unrs-resolver";
 
 import {
   getConfigFilesCache,
