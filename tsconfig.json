@@ -1,21 +1,15 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020", // Node 14
-    "module": "Node16",
-    "lib": ["ES2020"],
+    "module": "node16",
     "jsx": "preserve",
     "noEmit": true,
-    "strict": true,
     "declaration": true,
     "declarationDir": "lib",
     "noImplicitAny": true,
-    "moduleResolution": "node16",
     "baseUrl": "./",
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
     "resolveJsonModule": false,
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
     "paths": {
@@ -23,5 +17,5 @@
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "***.spec.ts", "lib"]
+  "exclude": ["node_modules", "tests/**/*.ts", "lib"]
 }
