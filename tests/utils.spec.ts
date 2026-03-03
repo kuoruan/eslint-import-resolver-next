@@ -211,7 +211,7 @@ describe("utils", () => {
   });
 
   describe("test getResolveRoots", () => {
-    const originalProcessCwd = process.cwd.bind(null);
+    const originalProcessCwd = process.cwd.bind(process);
     let mockCwd: string;
 
     beforeEach(() => {
