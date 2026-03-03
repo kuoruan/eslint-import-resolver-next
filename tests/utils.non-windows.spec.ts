@@ -781,7 +781,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       expect(resolveConfigFile(false, "/root", "/root/src/file.ts", "tsconfig.json")).toBeUndefined();
     });
 
-    it("returns absolute configFile path when it exists", () => {
+    it("returns TsconfigOptions for absolute configFile path when it exists", () => {
       mock({ "/absolute/path/tsconfig.json": "{}" });
 
       const result = resolveConfigFile(
@@ -790,7 +790,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toBe("/absolute/path/tsconfig.json");
+      expect(result).toEqual({ configFile: "/absolute/path/tsconfig.json", references: "auto" });
     });
 
     it("returns undefined for absolute configFile path that does not exist", () => {
@@ -814,7 +814,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toBe("/root/configs/tsconfig.json");
+      expect(result).toEqual({ configFile: "/root/configs/tsconfig.json", references: "auto" });
     });
 
     it("returns undefined for relative configFile that does not exist", () => {
@@ -838,7 +838,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toBe("/root/tsconfig.json");
+      expect(result).toEqual({ configFile: "/root/tsconfig.json", references: "auto" });
     });
 
     it("searches upward for custom filename when config is a string", () => {
@@ -850,7 +850,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toBe("/root/tsconfig.build.json");
+      expect(result).toEqual({ configFile: "/root/tsconfig.build.json", references: "auto" });
     });
 
     it("searches upward for default filename when config is an object without configFile", () => {
@@ -862,7 +862,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toBe("/root/tsconfig.json");
+      expect(result).toEqual({ configFile: "/root/tsconfig.json", references: "auto" });
     });
 
     it("prefers the closer (deeper) config file when searching upward", () => {
@@ -877,7 +877,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toBe("/root/src/tsconfig.json");
+      expect(result).toEqual({ configFile: "/root/src/tsconfig.json", references: "auto" });
     });
 
     it("returns undefined when no config file found searching upward", () => {
