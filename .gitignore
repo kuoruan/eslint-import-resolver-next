@@ -2,3 +2,4 @@
 /lib
 .tool-versions
 .modules.yaml
+tests/**/pnpm-lock.yaml

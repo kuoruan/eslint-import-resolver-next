@@ -37,31 +37,31 @@
   "dependencies": {
     "eslint-import-context": "^0.2.0",
     "is-bun-module": "^2.0.0",
-    "js-yaml": "^4.1.0",
-    "oxc-resolver": "^11.6.1",
+    "js-yaml": "^4.1.1",
+    "oxc-resolver": "^11.19.1",
     "stable-hash-x": "^0.2.0",
-    "tinyglobby": "^0.2.14"
+    "tinyglobby": "^0.2.15"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.28.0",
-    "@eslint/js": "^9.33.0",
-    "@rollup/plugin-typescript": "^12.1.4",
-    "@tsconfig/node14": "^14.1.4",
+    "@babel/eslint-parser": "^7.28.6",
+    "@eslint/js": "^9.39.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@tsconfig/node14": "^14.1.8",
     "@types/js-yaml": "^4.0.9",
     "@types/mock-fs": "^4.13.4",
     "@types/node": "^14.18.63",
-    "eslint": "^9.33.0",
+    "eslint": "^9.39.3",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-simple-import-sort": "^12.1.1",
-    "globals": "^16.3.0",
+    "globals": "^17.4.0",
     "mock-fs": "^5.5.0",
-    "prettier": "^3.6.2",
-    "rollup": "^4.46.3",
-    "rollup-plugin-node-externals": "^8.0.1",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.40.0",
-    "typescript-transform-paths": "^3.5.5",
-    "vitest": "^3.2.4"
+    "prettier": "^3.8.1",
+    "rollup": "^4.59.0",
+    "rollup-plugin-node-externals": "^8.1.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "typescript-transform-paths": "^3.5.6",
+    "vitest": "^4.0.18"
   }
 }
