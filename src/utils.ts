@@ -4,18 +4,13 @@ import path from "node:path";
 import process from "node:process";
 
 import { getTsconfigWithContext, useRuleContext } from "eslint-import-context";
-import { createFilesMatcher, getTsconfig } from "get-tsconfig";
+import { getTsconfig } from "get-tsconfig";
 import yaml from "js-yaml";
 import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash-x";
 import { globSync } from "tinyglobby";
 
-import {
-  fileMatcherCache,
-  packagesCache,
-  tsconfigSearchCache,
-  yamlCache,
-} from "./cache.js";
+import { packagesCache, tsconfigSearchCache, yamlCache } from "./cache.js";
 import {
   defaultConfigFileOptions,
   defaultPackagesOptions,
@@ -404,16 +399,6 @@ export function resolveConfigFile(
   // Use get-tsconfig to search upward from sourceFile (no directory globbing)
   const found = getTsconfig(sourceFile, filename, tsconfigSearchCache);
   if (!found) return undefined;
-
-  // Lazily build a FileMatcher for this tsconfig and keep it in the cache.
-  // The matcher compiles include/exclude/files glob patterns once per tsconfig
-  // path, so repeated resolutions that share the same tsconfig avoid
-  // re-parsing those patterns on every call.
-  // Consumers can also read `fileMatcherCache` to check whether an arbitrary
-  // file is covered by an already-resolved tsconfig.
-  if (!fileMatcherCache.get(found.path)) {
-    fileMatcherCache.set(found.path, createFilesMatcher(found));
-  }
 
   return found.path;
 }
