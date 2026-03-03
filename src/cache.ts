@@ -1,5 +1,7 @@
 import process from "node:process";
 
+import type { FileMatcher } from "get-tsconfig";
+
 /**
  * A generic cache that respects the `NEXT_RESOLVER_CACHE_DISABLED` environment variable.
  * The cache-disabled check is performed inside `get` and `set`, so callers do not need
@@ -30,8 +32,17 @@ export const packagesCache = new ResolverCache<string, string[]>();
 /**
  * Persistent cache passed to get-tsconfig's `getTsconfig` function.
  * Keyed by "${configName}:${dirPath}" internally by get-tsconfig.
+ * Uses `any` to match the `Cache = Map<string, any>` type from get-tsconfig.
  */
-export const tsconfigSearchCache = new ResolverCache<string, unknown>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const tsconfigSearchCache = new ResolverCache<string, any>();
+
+/**
+ * Cache of `FileMatcher` functions keyed by resolved tsconfig file path.
+ * Built from `createFilesMatcher` to avoid re-parsing glob patterns for the
+ * same tsconfig across multiple source-file resolutions.
+ */
+export const fileMatcherCache = new ResolverCache<string, FileMatcher>();
 
 /**
  * Cache for parsed YAML files, keyed by file path.
