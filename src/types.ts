@@ -1,4 +1,4 @@
-import type { NapiResolveOptions } from "oxc-resolver";
+import type { NapiResolveOptions, TsconfigOptions } from "oxc-resolver";
 
 export interface PackageGlobOptions {
   /**
@@ -27,7 +27,7 @@ export interface PackageOptions extends PackageGlobOptions {
   pnpmWorkspace?: boolean | string;
 }
 
-export type ConfigFileOptions = Partial<NapiResolveOptions["tsconfig"]>;
+export type ConfigFileOptions = Partial<TsconfigOptions>;
 
 export interface Options extends Omit<
   NapiResolveOptions,
