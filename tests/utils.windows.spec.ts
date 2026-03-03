@@ -741,9 +741,9 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       });
 
       const [filename, configFiles] = getConfigFiles(
-        { ignore: ["**/node_modules/**"] },
+        {},
         "C:\\root",
-        { filename: "default.json" },
+        { filename: "default.json", ignore: ["**/node_modules/**"] },
       );
 
       expect(filename).toBe("default.json");
@@ -783,8 +783,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
   });
 
   describe("test normalizeConfigFileOptions", () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ignore: _, ...restDefaultOptions } = defaultConfigFileOptions;
+    const restDefaultOptions = defaultConfigFileOptions;
 
     it("returns undefined when both tsconfig and jsconfig are falsy", () => {
       const configs = {
@@ -969,7 +968,6 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       const configs = {
         tsconfig: {
           configFile: "custom.json",
-          ignore: ["**/dist/**"],
         },
         jsconfig: undefined,
       };
@@ -984,7 +982,7 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       });
     });
 
-    it("handles custom config file paths with ignore patterns", () => {
+    it("handles custom config file paths", () => {
       mock({
         "C:\\root\\custom.json": "{}",
         "C:\\root\\dist\\custom.json": "{}",
@@ -993,7 +991,6 @@ describe.runIf(process.platform === "win32")("utils (Windows)", () => {
       const configs = {
         tsconfig: {
           configFile: "custom.json",
-          ignore: ["**/dist/**"],
         },
         jsconfig: undefined,
       };

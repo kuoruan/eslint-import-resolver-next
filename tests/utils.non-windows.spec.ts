@@ -730,9 +730,9 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       });
 
       const [filename, configFiles] = getConfigFiles(
-        { ignore: ["**/node_modules/**"] },
+        {},
         "/root",
-        { filename: "default.json" },
+        { filename: "default.json", ignore: ["**/node_modules/**"] },
       );
 
       expect(filename).toBe("default.json");
@@ -790,7 +790,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toEqual({ configFile: "/absolute/path/tsconfig.json", references: "auto" });
+      expect(result).toEqual({ configFile: "/absolute/path/tsconfig.json" });
     });
 
     it("returns undefined for absolute configFile path that does not exist", () => {
@@ -814,7 +814,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toEqual({ configFile: "/root/configs/tsconfig.json", references: "auto" });
+      expect(result).toEqual({ configFile: "/root/configs/tsconfig.json" });
     });
 
     it("returns undefined for relative configFile that does not exist", () => {
@@ -838,7 +838,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toEqual({ configFile: "/root/tsconfig.json", references: "auto" });
+      expect(result).toEqual({ configFile: "/root/tsconfig.json" });
     });
 
     it("searches upward for custom filename when config is a string", () => {
@@ -850,7 +850,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toEqual({ configFile: "/root/tsconfig.build.json", references: "auto" });
+      expect(result).toEqual({ configFile: "/root/tsconfig.build.json" });
     });
 
     it("searches upward for default filename when config is an object without configFile", () => {
@@ -862,7 +862,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toEqual({ configFile: "/root/tsconfig.json", references: "auto" });
+      expect(result).toEqual({ configFile: "/root/tsconfig.json" });
     });
 
     it("prefers the closer (deeper) config file when searching upward", () => {
@@ -877,7 +877,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
         "/root/src/file.ts",
         "tsconfig.json",
       );
-      expect(result).toEqual({ configFile: "/root/src/tsconfig.json", references: "auto" });
+      expect(result).toEqual({ configFile: "/root/src/tsconfig.json" });
     });
 
     it("returns undefined when no config file found searching upward", () => {
@@ -894,8 +894,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
   });
 
   describe("test normalizeConfigFileOptions", () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ignore: _, ...restDefaultOptions } = defaultConfigFileOptions;
+    const restDefaultOptions = defaultConfigFileOptions;
 
     it("returns undefined when both tsconfig and jsconfig are falsy", () => {
       const configs = {
@@ -1103,7 +1102,6 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       const configs = {
         tsconfig: {
           configFile: "custom.json",
-          ignore: ["**/dist/**"],
         },
         jsconfig: undefined,
       };
@@ -1119,7 +1117,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       });
     });
 
-    it("handles custom config file paths with ignore patterns", () => {
+    it("handles custom config file paths", () => {
       mock({
         "/root/custom.json": "{}",
         "/root/dist/custom.json": "{}",
@@ -1128,7 +1126,6 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       const configs = {
         tsconfig: {
           configFile: "custom.json",
-          ignore: ["**/dist/**"],
         },
         jsconfig: undefined,
       };

@@ -1,90 +1,71 @@
 import process from "node:process";
 
-import type { Cache } from "get-tsconfig";
+import type { FileMatcher } from "get-tsconfig";
 
 /**
  * Whether to disable the cache or not.
  */
 const isCacheDisabled = () => !!process.env.NEXT_RESOLVER_CACHE_DISABLED;
 
-const pathToPackagesCache = new Map<string, string[]>();
+/**
+ * A generic cache that respects the `NEXT_RESOLVER_CACHE_DISABLED` environment variable.
+ * The cache-disabled check is performed inside `get` and `set`, so callers do not need
+ * to check `isCacheDisabled` themselves.
+ */
+export class ResolverCache<K, V> {
+  private readonly store = new Map<K, V>();
 
-export function getPackagesCache(root: string): string[] | null {
-  if (isCacheDisabled()) return null;
-
-  if (pathToPackagesCache.has(root)) {
-    return pathToPackagesCache.get(root)!;
+  get(key: K): V | undefined {
+    if (isCacheDisabled()) return undefined;
+    return this.store.get(key);
   }
 
-  return null;
-}
-
-export function setPackagesCache(root: string, packagePaths: string[]): void {
-  if (isCacheDisabled()) return;
-
-  pathToPackagesCache.set(root, packagePaths);
-}
-
-export function clearPackagesCache(): void {
-  if (isCacheDisabled()) return;
-
-  pathToPackagesCache.clear();
-}
-
-const configFilesCache = new Map<string, string[]>();
-
-export function getConfigFilesCache(root: string): string[] | null {
-  if (isCacheDisabled()) return null;
-
-  if (configFilesCache.has(root)) {
-    return configFilesCache.get(root)!;
+  set(key: K, value: V): void {
+    if (isCacheDisabled()) return;
+    this.store.set(key, value);
   }
 
-  return null;
+  entries(): [K, V][] {
+    return [...this.store.entries()];
+  }
+
+  clear(): void {
+    this.store.clear();
+  }
+
+  /**
+   * Returns the underlying `Map` when caching is enabled, or `undefined` when
+   * disabled. Use this to pass the cache to external APIs (e.g., `getTsconfig`).
+   */
+  get map(): Map<K, V> | undefined {
+    return isCacheDisabled() ? undefined : this.store;
+  }
 }
 
-export function setConfigFilesCache(root: string, configFiles: string[]): void {
-  if (isCacheDisabled()) return;
+/**
+ * Cache for workspace package paths, keyed by root directory.
+ */
+export const packagesCache = new ResolverCache<string, string[]>();
 
-  configFilesCache.set(root, configFiles);
-}
-
-export function clearConfigFilesCache(): void {
-  if (isCacheDisabled()) return;
-
-  configFilesCache.clear();
-}
+/**
+ * Cache for globbed config file paths, keyed by root directory.
+ * @deprecated Used only by the deprecated {@link getConfigFiles} function.
+ */
+export const configFilesCache = new ResolverCache<string, string[]>();
 
 /**
  * Persistent cache passed to get-tsconfig's `getTsconfig` function.
  * Keyed by "${configName}:${dirPath}" internally by get-tsconfig.
  */
-export const tsconfigSearchCache: Cache = new Map();
+export const tsconfigSearchCache = new ResolverCache<string, any>();
 
-export function clearTsconfigSearchCache(): void {
-  tsconfigSearchCache.clear();
-}
+/**
+ * Cache of `FileMatcher` instances keyed by tsconfig/jsconfig file path.
+ * Used to short-circuit `getTsconfig` directory walks for known configs.
+ */
+export const fileMatcherCache = new ResolverCache<string, FileMatcher>();
 
-const yamlCache = new Map<string, unknown>();
-
-export function getYamlCache(root: string): unknown {
-  if (isCacheDisabled()) return null;
-
-  if (yamlCache.has(root)) {
-    return yamlCache.get(root)!;
-  }
-
-  return null;
-}
-
-export function setYamlCache(root: string, yaml: unknown): void {
-  if (isCacheDisabled()) return;
-
-  yamlCache.set(root, yaml);
-}
-
-export function clearYamlCache(): void {
-  if (isCacheDisabled()) return;
-
-  yamlCache.clear();
-}
+/**
+ * Cache for parsed YAML files, keyed by file path.
+ */
+export const yamlCache = new ResolverCache<string, unknown>();

@@ -4,20 +4,20 @@ import path from "node:path";
 import process from "node:process";
 
 import { getTsconfigWithContext, useRuleContext } from "eslint-import-context";
-import { getTsconfig } from "get-tsconfig";
+import { createFilesMatcher, getTsconfig } from "get-tsconfig";
 import yaml from "js-yaml";
 import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash-x";
 import { globSync } from "tinyglobby";
 
 import {
-  getPackagesCache,
-  getYamlCache,
-  setPackagesCache,
-  setYamlCache,
+  fileMatcherCache,
+  packagesCache,
   tsconfigSearchCache,
+  yamlCache,
 } from "./cache.js";
 import {
+  defaultConfigFileOptions,
   defaultPackagesOptions,
   JSCONFIG_FILENAME,
   PNPM_WORKSPACE_FILENAME,
@@ -168,7 +168,7 @@ export function sortPathsByDepth(paths: string[]): string[] {
  * @returns {T | null} the parsed yaml file
  */
 export function readYamlFile<T>(filePath: string): T | null {
-  const cache = getYamlCache(filePath);
+  const cache = yamlCache.get(filePath);
   if (cache) return cache as T;
 
   if (!fs.existsSync(filePath)) {
@@ -184,7 +184,7 @@ export function readYamlFile<T>(filePath: string): T | null {
     doc = null;
   }
 
-  setYamlCache(filePath, doc);
+  yamlCache.set(filePath, doc);
 
   return doc;
 }
@@ -255,7 +255,7 @@ export function findAllPackages(
   root: string,
   packageOpts: PackageOptions | string[],
 ): string[] {
-  const cache = getPackagesCache(root);
+  const cache = packagesCache.get(root);
   if (cache) return cache;
 
   const opts = normalizePackageGlobOptions(packageOpts, root);
@@ -285,7 +285,7 @@ export function findAllPackages(
     paths.map((manifestPath) => path.join(root, path.dirname(manifestPath))),
   );
 
-  setPackagesCache(root, packagePaths);
+  packagesCache.set(root, packagePaths);
 
   return packagePaths;
 }
@@ -361,12 +361,15 @@ export function findClosestConfigFile(
  *   uses `get-tsconfig`'s `getTsconfig` to search upward from `sourceFile` for the
  *   resolved filename — no directory globbing required.
  *
+ * The `references` field is intentionally omitted from the return value; callers
+ * should apply defaults (e.g. `defaultConfigFileOptions`) after this function.
+ *
  * @param {boolean | string | ConfigFileOptions | undefined} config - the config option
  * @param {string} packageDir - the root directory of the package
  * @param {string} sourceFile - the source file being resolved
  * @param {string} defaultFilename - the default config filename to search for
  *
- * @returns {TsconfigOptions | undefined} the resolved tsconfig options including `references: "auto"`, or undefined
+ * @returns {TsconfigOptions | undefined} the resolved config file path, or undefined
  */
 export function resolveConfigFile(
   config: boolean | string | ConfigFileOptions | undefined,
@@ -380,13 +383,13 @@ export function resolveConfigFile(
     // Absolute path: use directly if the file exists
     if (path.isAbsolute(config.configFile)) {
       if (!fs.existsSync(config.configFile)) return undefined;
-      return { configFile: config.configFile, references: "auto" };
+      return { configFile: config.configFile };
     }
 
     // Relative path: resolve relative to packageDir
     const resolved = path.resolve(packageDir, config.configFile);
     if (!fs.existsSync(resolved)) return undefined;
-    return { configFile: resolved, references: "auto" };
+    return { configFile: resolved };
   }
 
   // Determine the filename to search for
@@ -399,12 +402,16 @@ export function resolveConfigFile(
   }
 
   // Use get-tsconfig to search upward from sourceFile (no directory globbing)
-  const cache = process.env.NEXT_RESOLVER_CACHE_DISABLED
-    ? undefined
-    : tsconfigSearchCache;
-  const found = getTsconfig(sourceFile, filename, cache);
+  const found = getTsconfig(sourceFile, filename, tsconfigSearchCache.map);
   if (!found) return undefined;
-  return { configFile: found.path, references: "auto" };
+
+  // Build and cache a FileMatcher for this tsconfig so future callers can
+  // efficiently test whether a file is covered by the resolved config.
+  if (!fileMatcherCache.get(found.path)) {
+    fileMatcherCache.set(found.path, createFilesMatcher(found));
+  }
+
+  return { configFile: found.path };
 }
 
 /**
@@ -430,11 +437,9 @@ export function getConfigFiles(
   if (!config) return [undefined, undefined];
 
   let filename: string;
-  let ignore: string[] | undefined;
+  const ignore: string[] | undefined = defaults.ignore;
 
   if (typeof config === "object") {
-    ignore = config.ignore ?? defaults.ignore;
-
     if (config.configFile) {
       if (path.isAbsolute(config.configFile)) {
         // if the config file is absolute, return the filename and the config file
@@ -447,11 +452,9 @@ export function getConfigFiles(
     }
   } else if (typeof config === "string") {
     filename = path.basename(config);
-    ignore = defaults.ignore;
   } else {
     // if the config is set to true, use the default filename
     filename = defaults.filename;
-    ignore = defaults.ignore;
   }
 
   const globPaths = globSync(`**/${filename}`, {
@@ -491,19 +494,23 @@ export function normalizeConfigFileOptions(
     const tsconfigPath = getTsconfigFromContext(context, sourceFile);
 
     if (tsconfigPath) {
-      return { configFile: tsconfigPath, references: "auto" };
+      return { ...defaultConfigFileOptions, configFile: tsconfigPath };
     }
 
     // In eslint-plugin-import-x context but no tsconfig found via context.
     // Only fall through to jsconfig search if jsconfig is configured.
     if (!jsconfig) return undefined;
 
-    return resolveConfigFile(
+    const jsconfigOptions = resolveConfigFile(
       jsconfig,
       packageDir,
       sourceFile,
       JSCONFIG_FILENAME,
     );
+
+    return jsconfigOptions
+      ? { ...defaultConfigFileOptions, ...jsconfigOptions }
+      : undefined;
   }
 
   // Legacy path (eslint-plugin-import or explicitly configured tsconfig):
@@ -529,10 +536,16 @@ export function normalizeConfigFileOptions(
   if (tsconfigOptions && jsconfigOptions) {
     const tsconfigDepth = getPathDepth(tsconfigOptions.configFile);
     const jsconfigDepth = getPathDepth(jsconfigOptions.configFile);
-    return jsconfigDepth > tsconfigDepth ? jsconfigOptions : tsconfigOptions;
+    const best =
+      jsconfigDepth > tsconfigDepth ? jsconfigOptions : tsconfigOptions;
+    return { ...defaultConfigFileOptions, ...best };
   }
 
-  return tsconfigOptions ?? jsconfigOptions;
+  // At this point exactly one of the two is defined (both-undefined case already returned above).
+  return {
+    ...defaultConfigFileOptions,
+    ...(tsconfigOptions ?? jsconfigOptions) as TsconfigOptions,
+  };
 }
 
 /**
@@ -641,13 +654,14 @@ export function getTsconfigFromContext(
 
   if (project) {
     const projects = Array.isArray(project) ? project : [project];
-    const cache = process.env.NEXT_RESOLVER_CACHE_DISABLED
-      ? undefined
-      : tsconfigSearchCache;
     for (const proj of projects) {
       if (proj === true) {
         // Search upward from the source file using get-tsconfig
-        const result = getTsconfig(sourceFile, TSCONFIG_FILENAME, cache);
+        const result = getTsconfig(
+          sourceFile,
+          TSCONFIG_FILENAME,
+          tsconfigSearchCache.map,
+        );
         if (result) return result.path;
       } else {
         const tsconfigPath = path.resolve(tsconfigRootDir, proj as string);
@@ -659,9 +673,10 @@ export function getTsconfigFromContext(
     return undefined;
   } else {
     // Search upward from tsconfigRootDir using get-tsconfig
-    const cache = process.env.NEXT_RESOLVER_CACHE_DISABLED
-      ? undefined
-      : tsconfigSearchCache;
-    return getTsconfig(tsconfigRootDir, TSCONFIG_FILENAME, cache)?.path;
+    return getTsconfig(
+      tsconfigRootDir,
+      TSCONFIG_FILENAME,
+      tsconfigSearchCache.map,
+    )?.path;
   }
 }

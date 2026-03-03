@@ -27,9 +27,7 @@ export interface PackageOptions extends PackageGlobOptions {
   pnpmWorkspace?: boolean | string;
 }
 
-export type ConfigFileOptions = Partial<NapiResolveOptions["tsconfig"]> & {
-  ignore?: string[];
-};
+export type ConfigFileOptions = Partial<NapiResolveOptions["tsconfig"]>;
 
 export interface Options extends Omit<
   NapiResolveOptions,
