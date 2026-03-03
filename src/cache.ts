@@ -1,5 +1,7 @@
 import process from "node:process";
 
+import type { Cache } from "get-tsconfig";
+
 /**
  * Whether to disable the cache or not.
  */
@@ -51,6 +53,16 @@ export function clearConfigFilesCache(): void {
   if (isCacheDisabled()) return;
 
   configFilesCache.clear();
+}
+
+/**
+ * Persistent cache passed to get-tsconfig's `getTsconfig` function.
+ * Keyed by "${configName}:${dirPath}" internally by get-tsconfig.
+ */
+export const tsconfigSearchCache: Cache = new Map();
+
+export function clearTsconfigSearchCache(): void {
+  tsconfigSearchCache.clear();
 }
 
 const yamlCache = new Map<string, unknown>();
