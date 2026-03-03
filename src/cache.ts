@@ -1,78 +1,39 @@
 import process from "node:process";
 
 /**
- * Whether to disable the cache or not.
+ * A generic cache that respects the `NEXT_RESOLVER_CACHE_DISABLED` environment variable.
+ * The cache-disabled check is performed inside `get` and `set`, so callers do not need
+ * to check `isCacheDisabled` themselves.
  */
-const isCacheDisabled = () => !!process.env.NEXT_RESOLVER_CACHE_DISABLED;
-
-const pathToPackagesCache = new Map<string, string[]>();
-
-export function getPackagesCache(root: string): string[] | null {
-  if (isCacheDisabled()) return null;
-
-  if (pathToPackagesCache.has(root)) {
-    return pathToPackagesCache.get(root)!;
+export class ResolverCache<K, V> extends Map<K, V> {
+  get disabled(): boolean {
+    return !!process.env.NEXT_RESOLVER_CACHE_DISABLED;
   }
 
-  return null;
-}
-
-export function setPackagesCache(root: string, packagePaths: string[]): void {
-  if (isCacheDisabled()) return;
-
-  pathToPackagesCache.set(root, packagePaths);
-}
-
-export function clearPackagesCache(): void {
-  if (isCacheDisabled()) return;
-
-  pathToPackagesCache.clear();
-}
-
-const configFilesCache = new Map<string, string[]>();
-
-export function getConfigFilesCache(root: string): string[] | null {
-  if (isCacheDisabled()) return null;
-
-  if (configFilesCache.has(root)) {
-    return configFilesCache.get(root)!;
+  get(key: K): V | undefined {
+    if (this.disabled) return undefined;
+    return super.get(key);
   }
 
-  return null;
-}
+  set(key: K, value: V): this {
+    if (this.disabled) return this;
 
-export function setConfigFilesCache(root: string, configFiles: string[]): void {
-  if (isCacheDisabled()) return;
-
-  configFilesCache.set(root, configFiles);
-}
-
-export function clearConfigFilesCache(): void {
-  if (isCacheDisabled()) return;
-
-  configFilesCache.clear();
-}
-
-const yamlCache = new Map<string, unknown>();
-
-export function getYamlCache(root: string): unknown {
-  if (isCacheDisabled()) return null;
-
-  if (yamlCache.has(root)) {
-    return yamlCache.get(root)!;
+    return super.set(key, value);
   }
-
-  return null;
 }
 
-export function setYamlCache(root: string, yaml: unknown): void {
-  if (isCacheDisabled()) return;
+/**
+ * Cache for workspace package paths, keyed by root directory.
+ */
+export const packagesCache = new ResolverCache<string, string[]>();
 
-  yamlCache.set(root, yaml);
-}
+/**
+ * Persistent cache passed to get-tsconfig's `getTsconfig` function.
+ * Keyed by "${configName}:${dirPath}" internally by get-tsconfig.
+ */
+export const tsconfigSearchCache = new ResolverCache<string, unknown>();
 
-export function clearYamlCache(): void {
-  if (isCacheDisabled()) return;
-
-  yamlCache.clear();
-}
+/**
+ * Cache for parsed YAML files, keyed by file path.
+ */
+export const yamlCache = new ResolverCache<string, unknown>();

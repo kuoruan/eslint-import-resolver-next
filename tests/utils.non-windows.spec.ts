@@ -7,13 +7,13 @@ import {
   findClosestConfigFile,
   findClosestPackageRoot,
   findWorkspacePackages,
-  getConfigFiles,
   getPathDepth,
   normalizeAlias,
   normalizeConfigFileOptions,
   normalizePackageGlobOptions,
   normalizePatterns,
   readYamlFile,
+  resolveConfigFile,
   sortConfigFiles,
   sortPathsByDepth,
 } from "@/utils.js";
@@ -643,136 +643,139 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
     });
   });
 
-  describe("test getConfigFiles", () => {
+  describe("test resolveConfigFile", () => {
     beforeEach(() => {
       mock.restore();
     });
 
     it("returns undefined for falsy config", () => {
-      const [filename, configFiles] = getConfigFiles(undefined, "/root", {
-        filename: "config.json",
-      });
-      expect(filename).toBeUndefined();
-      expect(configFiles).toBeUndefined();
+      expect(
+        resolveConfigFile(
+          undefined,
+          "/root",
+          "/root/src/file.ts",
+          "tsconfig.json",
+        ),
+      ).toBeUndefined();
+      expect(
+        resolveConfigFile(false, "/root", "/root/src/file.ts", "tsconfig.json"),
+      ).toBeUndefined();
     });
 
-    it("handles string config", () => {
-      mock({
-        "/root/a/custom.json": "{}",
-        "/root/b/custom.json": "{}",
-      });
+    it("returns TsconfigOptions for absolute configFile path when it exists", () => {
+      mock({ "/absolute/path/tsconfig.json": "{}" });
 
-      const [filename, configFiles] = getConfigFiles("custom.json", "/root", {
-        filename: "config.json",
-        ignore: ["**/node_modules/**"],
-      });
-
-      expect(filename).toBe("custom.json");
-      expect(configFiles).toEqual([
-        "/root/a/custom.json",
-        "/root/b/custom.json",
-      ]);
-    });
-
-    it("handles boolean config", () => {
-      mock({
-        "/root/a/default.json": "{}",
-        "/root/b/default.json": "{}",
-      });
-
-      const [filename, configFiles] = getConfigFiles(true, "/root", {
-        filename: "default.json",
-        ignore: ["**/node_modules/**"],
-      });
-
-      expect(filename).toBe("default.json");
-      expect(configFiles).toEqual([
-        "/root/a/default.json",
-        "/root/b/default.json",
-      ]);
-    });
-
-    it("handles object config with absolute configFile path", () => {
-      const [filename, configFiles] = getConfigFiles(
-        { configFile: "/absolute/path/config.json" },
+      const result = resolveConfigFile(
+        { configFile: "/absolute/path/tsconfig.json" },
         "/root",
-        { filename: "default.json" },
+        "/root/src/file.ts",
+        "tsconfig.json",
       );
-      expect(filename).toBe("config.json");
-      expect(configFiles).toEqual(["/absolute/path/config.json"]);
+      expect(result).toEqual("/absolute/path/tsconfig.json");
     });
 
-    it("handles object config with relative configFile path", () => {
-      mock({
-        "/root/a/custom.json": "{}",
-        "/root/b/custom.json": "{}",
-      });
+    it("returns undefined for absolute configFile path that does not exist", () => {
+      mock({});
 
-      const [filename, configFiles] = getConfigFiles(
-        { configFile: "custom.json" },
+      const result = resolveConfigFile(
+        { configFile: "/nonexistent/tsconfig.json" },
         "/root",
-        { filename: "default.json" },
+        "/root/src/file.ts",
+        "tsconfig.json",
       );
-
-      expect(filename).toBe("custom.json");
-      expect(configFiles).toEqual([
-        "/root/a/custom.json",
-        "/root/b/custom.json",
-      ]);
+      expect(result).toBeUndefined();
     });
 
-    it("handles object config without configFile", () => {
-      mock({
-        "/root/a/default.json": "{}",
-        "/root/b/default.json": "{}",
-        "/root/node_modules/c/default.json": "{}",
-      });
+    it("resolves relative configFile relative to packageDir", () => {
+      mock({ "/root/configs/tsconfig.json": "{}" });
 
-      const [filename, configFiles] = getConfigFiles(
-        { ignore: ["**/node_modules/**"] },
+      const result = resolveConfigFile(
+        { configFile: "configs/tsconfig.json" },
         "/root",
-        { filename: "default.json" },
+        "/root/src/file.ts",
+        "tsconfig.json",
       );
-
-      expect(filename).toBe("default.json");
-      expect(configFiles).toEqual([
-        "/root/a/default.json",
-        "/root/b/default.json",
-      ]);
+      expect(result).toEqual("/root/configs/tsconfig.json");
     });
 
-    it("uses default ignore patterns when not specified", () => {
-      mock({
-        "/root/a/config.json": "{}",
-        "/root/node_modules/b/config.json": "{}",
-      });
+    it("returns undefined for relative configFile that does not exist", () => {
+      mock({});
 
-      const [filename, configFiles] = getConfigFiles(true, "/root", {
-        filename: "config.json",
-        ignore: ["**/node_modules/**"],
-      });
-
-      expect(filename).toBe("config.json");
-      expect(configFiles).toEqual(["/root/a/config.json"]);
+      const result = resolveConfigFile(
+        { configFile: "nonexistent.json" },
+        "/root",
+        "/root/src/file.ts",
+        "tsconfig.json",
+      );
+      expect(result).toBeUndefined();
     });
 
-    it("returns empty array when no config files found", () => {
+    it("searches upward for default filename when config is true", () => {
+      mock({ "/root/tsconfig.json": "{}" });
+
+      const result = resolveConfigFile(
+        true,
+        "/root",
+        "/root/src/file.ts",
+        "tsconfig.json",
+      );
+      expect(result).toEqual("/root/tsconfig.json");
+    });
+
+    it("searches upward for custom filename when config is a string", () => {
+      mock({ "/root/tsconfig.build.json": "{}" });
+
+      const result = resolveConfigFile(
+        "tsconfig.build.json",
+        "/root",
+        "/root/src/file.ts",
+        "tsconfig.json",
+      );
+      expect(result).toEqual("/root/tsconfig.build.json");
+    });
+
+    it("searches upward for default filename when config is an object without configFile", () => {
+      mock({ "/root/tsconfig.json": "{}" });
+
+      const result = resolveConfigFile(
+        { references: "auto" },
+        "/root",
+        "/root/src/file.ts",
+        "tsconfig.json",
+      );
+      expect(result).toEqual("/root/tsconfig.json");
+    });
+
+    it("prefers the closer (deeper) config file when searching upward", () => {
       mock({
-        "/root/src/index.ts": "",
+        "/root/tsconfig.json": "{}",
+        "/root/src/tsconfig.json": "{}",
       });
 
-      const [filename, configFiles] = getConfigFiles(true, "/root", {
-        filename: "nonexistent.json",
-      });
+      const result = resolveConfigFile(
+        true,
+        "/root",
+        "/root/src/file.ts",
+        "tsconfig.json",
+      );
+      expect(result).toEqual("/root/src/tsconfig.json");
+    });
 
-      expect(filename).toBe("nonexistent.json");
-      expect(configFiles).toEqual([]);
+    it("returns undefined when no config file found searching upward", () => {
+      mock({ "/root/src/file.ts": "" });
+
+      const result = resolveConfigFile(
+        true,
+        "/root",
+        "/root/src/file.ts",
+        "nonexistent.json",
+      );
+      expect(result).toBeUndefined();
     });
   });
 
   describe("test normalizeConfigFileOptions", () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ignore: _, ...restDefaultOptions } = defaultConfigFileOptions;
+    const restDefaultOptions = defaultConfigFileOptions;
 
     it("returns undefined when both tsconfig and jsconfig are falsy", () => {
       const configs = {
@@ -875,6 +878,28 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       });
     });
 
+    it("prefers deeper jsconfig over shallower tsconfig", () => {
+      mock({
+        "/root/tsconfig.json": "{}",
+        "/root/src/jsconfig.json": "{}",
+      });
+
+      const configs = {
+        tsconfig: true,
+        jsconfig: true,
+      };
+
+      const result = normalizeConfigFileOptions(
+        configs,
+        "/root",
+        "/root/src/file.ts",
+      );
+      expect(result).toEqual({
+        ...restDefaultOptions,
+        configFile: "/root/src/jsconfig.json",
+      });
+    });
+
     it("returns undefined when no config files found", () => {
       mock({
         "/root/src/file.ts": "",
@@ -958,7 +983,6 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       const configs = {
         tsconfig: {
           configFile: "custom.json",
-          ignore: ["**/dist/**"],
         },
         jsconfig: undefined,
       };
@@ -974,7 +998,7 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       });
     });
 
-    it("handles custom config file paths with ignore patterns", () => {
+    it("handles custom config file paths", () => {
       mock({
         "/root/custom.json": "{}",
         "/root/dist/custom.json": "{}",
@@ -983,7 +1007,6 @@ describe.runIf(process.platform !== "win32")("utils non-Windows", () => {
       const configs = {
         tsconfig: {
           configFile: "custom.json",
-          ignore: ["**/dist/**"],
         },
         jsconfig: undefined,
       };

@@ -13,7 +13,6 @@ export const defaultPackagesOptions = {
 
 export const defaultConfigFileOptions = {
   references: "auto",
-  ignore: ["**/node_modules/**"],
 } satisfies Partial<ConfigFileOptions>;
 
 /**

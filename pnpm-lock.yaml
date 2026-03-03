@@ -11,6 +11,9 @@ importers:
       eslint-import-context:
         specifier: ^0.2.0
         version: 0.2.0(oxc-resolver@11.19.1)
+      get-tsconfig:
+        specifier: ^4.13.6
+        version: 4.13.6
       is-bun-module:
         specifier: ^2.0.0
         version: 2.0.0
