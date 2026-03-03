@@ -110,10 +110,6 @@ export function createNextImportResolver(
     ...config,
   };
 
-  const resolveRoots = getResolveRoots(roots);
-
-  const workspacePackages = findWorkspacePackages(resolveRoots, packages);
-
   return {
     interfaceVersion: 3,
     name: "eslint-import-resolver-next",
@@ -124,6 +120,10 @@ export function createNextImportResolver(
       if (result) {
         return result;
       }
+
+      const resolveRoots = getResolveRoots(roots);
+
+      const workspacePackages = findWorkspacePackages(resolveRoots, packages);
 
       const packageDir = findClosestPackageRoot(sourceFile, workspacePackages);
 
