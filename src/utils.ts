@@ -3,7 +3,7 @@ import module from "node:module";
 import path from "node:path";
 import process from "node:process";
 
-import { useRuleContext } from "eslint-import-context";
+import { getTsconfigWithContext, useRuleContext } from "eslint-import-context";
 import yaml from "js-yaml";
 import type { TsconfigOptions } from "oxc-resolver";
 import { stableHash } from "stable-hash-x";
@@ -428,6 +428,39 @@ export function normalizeConfigFileOptions(
   const { ignore: defaultIgnore, ...restDefaultOptions } =
     defaultConfigFileOptions;
 
+  // In eslint-plugin-import-x context, use getTsconfigWithContext for tsconfig
+  // (only when tsconfig is set to `true`, i.e. auto-detect mode)
+  const context = useRuleContext();
+  if (context && tsconfig === true) {
+    const tsconfigPath = getTsconfigFromContext(context, sourceFile);
+
+    if (tsconfigPath) {
+      return { ...restDefaultOptions, configFile: tsconfigPath };
+    }
+
+    // In eslint-plugin-import-x context but no tsconfig found via context.
+    // Only fall through to jsconfig filesystem search if jsconfig is configured.
+    if (!jsconfig) return undefined;
+
+    const [, jsconfigFiles] = getConfigFiles(jsconfig, packageDir, {
+      ignore: defaultIgnore,
+      filename: JSCONFIG_FILENAME,
+    });
+
+    if (!jsconfigFiles?.length) return undefined;
+
+    const closestJsconfig = findClosestConfigFile(
+      sourceFile,
+      sortConfigFiles(jsconfigFiles),
+    );
+
+    return closestJsconfig
+      ? { ...restDefaultOptions, configFile: closestJsconfig }
+      : undefined;
+  }
+
+  // Legacy filesystem globbing for eslint-plugin-import
+  // (or when tsconfig is not `true`, i.e. explicitly configured)
   let configFiles = getConfigFilesCache(packageDir);
 
   if (!configFiles) {
@@ -550,4 +583,71 @@ export function getResolveRoots(roots?: string[]): string[] {
 
   const context = useRuleContext();
   return [context?.cwd ?? process.cwd()];
+}
+
+/**
+ * Search upward from a directory for a tsconfig.json file.
+ *
+ * @param {string} from - the directory to start searching from
+ *
+ * @returns {string | undefined} the path to the tsconfig.json file, or undefined if not found
+ */
+function findTsconfigUpward(from: string): string | undefined {
+  let dir = from;
+
+  while (true) {
+    const tsconfigPath = path.join(dir, TSCONFIG_FILENAME);
+    if (fs.existsSync(tsconfigPath)) {
+      return tsconfigPath;
+    }
+
+    const parentDir = path.dirname(dir);
+    if (parentDir === dir) break;
+    dir = parentDir;
+  }
+
+  return undefined;
+}
+
+/**
+ * Get the tsconfig file path from the eslint-plugin-import-x rule context.
+ * Uses `getTsconfigWithContext` from `eslint-import-context` to find the tsconfig
+ * based on the parser options (e.g., `project` and `tsconfigRootDir`).
+ *
+ * @param {NonNullable<ReturnType<typeof useRuleContext>>} context - the rule context
+ * @param {string} sourceFile - the source file being linted
+ *
+ * @returns {string | undefined} the path to the tsconfig.json file, or undefined if not found
+ */
+export function getTsconfigFromContext(
+  context: NonNullable<ReturnType<typeof useRuleContext>>,
+  sourceFile: string,
+): string | undefined {
+  const tsconfig = getTsconfigWithContext(context);
+  if (!tsconfig) return undefined;
+
+  const parserOptions =
+    ("languageOptions" in context
+      ? context.languageOptions?.parserOptions
+      : undefined) ?? context.parserOptions;
+
+  const tsconfigRootDir =
+    parserOptions?.tsconfigRootDir ?? context.cwd ?? process.cwd();
+  const project = parserOptions?.project;
+
+  if (project) {
+    const projects = Array.isArray(project) ? project : [project];
+    for (const proj of projects) {
+      const tsconfigPath =
+        proj === true
+          ? findTsconfigUpward(path.dirname(sourceFile))
+          : path.resolve(tsconfigRootDir, proj as string);
+      if (tsconfigPath && fs.existsSync(tsconfigPath)) {
+        return tsconfigPath;
+      }
+    }
+    return undefined;
+  } else {
+    return findTsconfigUpward(tsconfigRootDir);
+  }
 }

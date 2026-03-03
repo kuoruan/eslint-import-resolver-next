@@ -255,4 +255,124 @@ describe("utils", () => {
       expect(getResolveRoots()).toEqual([mockCwd]);
     });
   });
+
+  describe("test getTsconfigFromContext", () => {
+    const repoRoot = process.cwd();
+
+    afterEach(() => {
+      vi.resetModules();
+      vi.clearAllMocks();
+    });
+
+    it("returns undefined when getTsconfigWithContext returns falsy", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: repoRoot }),
+        getTsconfigWithContext: () => undefined,
+      }));
+      const { getTsconfigFromContext } = await import("@/utils.js");
+      const context = { cwd: repoRoot };
+      expect(
+        getTsconfigFromContext(context as never, "/some/source.ts"),
+      ).toBeUndefined();
+    });
+
+    it("returns tsconfig path when project is an explicit path", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: repoRoot }),
+        getTsconfigWithContext: () => ({ compilerOptions: {} }),
+      }));
+      const { getTsconfigFromContext } = await import("@/utils.js");
+      const context = {
+        cwd: repoRoot,
+        parserOptions: {
+          tsconfigRootDir: repoRoot,
+          project: "./tsconfig.json",
+        },
+      };
+      const result = getTsconfigFromContext(
+        context as never,
+        process.cwd() + "/source.ts",
+      );
+      expect(result).toBe(`${repoRoot}/tsconfig.json`);
+    });
+
+    it("searches upward from sourceFile when project is true", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: repoRoot }),
+        getTsconfigWithContext: () => ({ compilerOptions: {} }),
+      }));
+      const { getTsconfigFromContext } = await import("@/utils.js");
+      const context = {
+        cwd: repoRoot,
+        parserOptions: {
+          project: true,
+        },
+      };
+      // Use a source file inside the repo (which has a tsconfig.json at root)
+      const result = getTsconfigFromContext(
+        context as never,
+        `${repoRoot}/src/utils.ts`,
+      );
+      expect(result).toBe(`${repoRoot}/tsconfig.json`);
+    });
+
+    it("searches upward from tsconfigRootDir when project is not set", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: repoRoot }),
+        getTsconfigWithContext: () => ({ compilerOptions: {} }),
+      }));
+      const { getTsconfigFromContext } = await import("@/utils.js");
+      const context = {
+        cwd: repoRoot,
+        parserOptions: {
+          tsconfigRootDir: `${repoRoot}/src`,
+        },
+      };
+      const result = getTsconfigFromContext(
+        context as never,
+        `${repoRoot}/src/utils.ts`,
+      );
+      expect(result).toBe(`${repoRoot}/tsconfig.json`);
+    });
+
+    it("returns undefined when project path does not exist", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: repoRoot }),
+        getTsconfigWithContext: () => ({ compilerOptions: {} }),
+      }));
+      const { getTsconfigFromContext } = await import("@/utils.js");
+      const context = {
+        cwd: repoRoot,
+        parserOptions: {
+          tsconfigRootDir: repoRoot,
+          project: "./nonexistent-tsconfig.json",
+        },
+      };
+      const result = getTsconfigFromContext(
+        context as never,
+        `${repoRoot}/source.ts`,
+      );
+      expect(result).toBeUndefined();
+    });
+
+    it("supports array of projects, returns first found", async () => {
+      vi.doMock("eslint-import-context", () => ({
+        useRuleContext: () => ({ cwd: repoRoot }),
+        getTsconfigWithContext: () => ({ compilerOptions: {} }),
+      }));
+      const { getTsconfigFromContext } = await import("@/utils.js");
+      const context = {
+        cwd: repoRoot,
+        parserOptions: {
+          tsconfigRootDir: repoRoot,
+          project: ["./nonexistent.json", "./tsconfig.json"],
+        },
+      };
+      const result = getTsconfigFromContext(
+        context as never,
+        `${repoRoot}/source.ts`,
+      );
+      expect(result).toBe(`${repoRoot}/tsconfig.json`);
+    });
+  });
 });
