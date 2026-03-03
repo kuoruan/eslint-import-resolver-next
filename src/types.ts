@@ -31,8 +31,10 @@ export type ConfigFileOptions = Partial<NapiResolveOptions["tsconfig"]> & {
   ignore?: string[];
 };
 
-export interface Options
-  extends Omit<NapiResolveOptions, "alias" | "tsconfig"> {
+export interface Options extends Omit<
+  NapiResolveOptions,
+  "alias" | "tsconfig"
+> {
   /**
    * Alias to resolve the paths.
    */
